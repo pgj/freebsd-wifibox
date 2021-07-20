@@ -1,0 +1,8 @@
+# This is a devd(8) configuration file to run the resume action of
+# wifibox on the ACPI resume event.
+
+notify 11 {
+        match "system"          "ACPI";
+        match "subsystem"       "Resume";
+        action "/etc/rc.resume acpi $notify && %%PREFIX%%/sbin/wifibox resume";
+};

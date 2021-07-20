@@ -26,6 +26,7 @@ install:
 
 	$(MKDIR) -p $(ETCDIR)/wifibox
 	$(CP) etc/* $(ETCDIR)/wifibox/
+	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' devd/wifibox.conf.sample > $(ETCDIR)/devd/wifibox.conf.sample
 
 	$(MKDIR) -p $(RCDIR)
 	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' rc.d/wifibox > $(RCDIR)/wifibox
