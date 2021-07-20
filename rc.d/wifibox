@@ -1,0 +1,22 @@
+#! /bin/sh
+
+# PROVIDE: wifibox
+# REQUIRE: NETWORKING SERVERS dmesg
+# KEYWORD: shutdown nojail
+
+. /etc/rc.subr
+
+: ${wifibox_enable="NO"}
+
+name=wifibox
+desc="Start and stop wifibox on boot and shutdown"
+rcvar=wifibox_enable
+
+load_rc_config ${name}
+
+command="%%PREFIX%%/sbin/${name}"
+start_cmd="${command} start"
+stop_cmd="${command} stop"
+status_cmd="${command} status"
+
+run_rc_command "$1"

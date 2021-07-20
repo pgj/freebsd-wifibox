@@ -1,0 +1,8 @@
+# These are the default values for launching the bhyve(8) guest.  Please
+# modify the `pasthru` value to match with the slot/bus/function of the
+# wireless PCI device, which can be obtained from the output of the
+# pciconf(8) tool.
+
+cpus=1
+memory=128M
+passthru=3/0/0

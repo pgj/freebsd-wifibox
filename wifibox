@@ -1,0 +1,192 @@
+#! /bin/sh
+# shellcheck disable=SC3043
+
+PREFIX=%%PREFIX%%
+LOCALBASE=%%LOCALBASE%%
+LOGDIR=/var/log/wifibox
+RUNDIR=/var/run/wifibox
+CONFDIR=${PREFIX}/etc/wifibox
+PIDFILE=${RUNDIR}/pid
+BHYVE_LOG=${LOGDIR}/bhyve.log
+GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
+
+check_virtfs() {
+    if ! (bhyve -s help | grep -Fq virtio-9p); then
+	/bin/echo "ERROR: The Virtio 9p (VirtFS) bhyve interface is not available."
+	exit 127
+    fi
+}
+
+check_configuration() {
+    local _file="$1"
+
+    if [ ! -f "${_file}" ]; then
+	/bin/echo "ERROR: ${_file} is missing, please create it from the sample."
+	exit 3
+    fi
+}
+
+create_interfaces() {
+    /sbin/ifconfig bridge create name bridge-wifibox up > /dev/null
+    /sbin/ifconfig tap create name tap-wifibox > /dev/null
+    /sbin/ifconfig bridge-wifibox addm tap-wifibox > /dev/null
+}
+
+destroy_interfaces() {
+    /sbin/ifconfig bridge-wifibox destroy > /dev/null
+    /sbin/ifconfig tap-wifibox destroy > /dev/null
+}
+
+get_ppt_device() {
+    check_configuration "${CONFDIR}/bhyve.conf"
+
+    # shellcheck source=./etc/bhyve.conf.sample
+    . "${CONFDIR}/bhyve.conf"
+
+    echo "pci${passthru}" | sed 's!/!:!g'
+}
+
+vm_start() {
+    check_configuration "${CONFDIR}/bhyve.conf"
+    check_configuration "${CONFDIR}/interfaces.conf"
+    check_configuration "${CONFDIR}/udhcpd.conf"
+    check_configuration "${CONFDIR}/wpa_supplicant.conf"
+
+    # shellcheck source=./etc/bhyve.conf.sample
+    . "${CONFDIR}/bhyve.conf"
+
+    /usr/sbin/devctl set driver -f "$(get_ppt_device)" ppt > /dev/null
+    ${LOCALBASE}/sbin/grub-bhyve -S -M "${memory}" -r host \
+		-m ${PREFIX}/share/wifibox/device.map \
+		-d ${PREFIX}/share/wifibox \
+		wifibox > ${GRUB_BHYVE_LOG} 2>&1
+    /usr/sbin/bhyve -c "${cpus}" -m "${memory}" -AHP -u -S \
+		    -s 0,hostbridge \
+		    -s 31,lpc \
+		    -s 4:0,virtio-blk,${PREFIX}/share/wifibox/disk.img \
+		    -s 4:1,virtio-9p,config=${CONFDIR},ro \
+		    -s 4:2,virtio-9p,var=${RUNDIR}/appliance \
+		    -s 5:0,e1000,tap-wifibox \
+		    -s 6:0,passthru,"${passthru}" \
+		    wifibox > ${BHYVE_LOG} 2>&1 &
+    # Give some time for bhyve to launch.
+    /bin/sleep 1 > /dev/null
+    /bin/pgrep -fx "bhyve[: ].* wifibox" > ${PIDFILE} 2>&1
+
+    if [ -f "$(cat ${PIDFILE})" ]; then
+	destroy_interfaces
+	/bin/echo "ERROR: Guest could not be started, check the contents of ${BHYVE_LOG}."
+	exit 4
+    fi
+}
+
+vm_stop() {
+    /bin/kill -SIGTERM "$(cat ${PIDFILE})" > /dev/null
+    /bin/sleep 3 > /dev/null
+    /usr/sbin/bhyvectl --force-poweroff --vm=wifibox >> ${BHYVE_LOG} 2>&1
+    /usr/sbin/bhyvectl --destroy --vm=wifibox >> ${BHYVE_LOG} 2>&1
+    /bin/sleep 1 > /dev/null
+    /usr/sbin/devctl clear driver -f "$(get_ppt_device)" > /dev/null
+}
+
+assert_vm_runs() {
+    if [ ! -f "${PIDFILE}" ]; then
+	/bin/echo "${PIDFILE} does not exist -- is not wifibox running?"
+	exit 1
+    fi
+}
+
+show_progress() {
+    /usr/bin/printf "."
+}
+
+wifibox_start() {
+    if [ -f "${PIDFILE}" ]; then
+	echo "${PIDFILE} already exists -- is wifibox running?"
+	exit 1
+    fi
+
+    /usr/bin/printf "Launching wifibox"
+
+    create_interfaces
+    show_progress
+
+    /bin/mkdir -p ${LOGDIR} > /dev/null
+    /bin/mkdir -p ${RUNDIR}/appliance > /dev/null
+    show_progress
+
+    vm_start
+    show_progress
+
+    # Give some more time for the guest to boot up.
+    /bin/sleep 2 > /dev/null
+    /bin/echo "OK"
+
+    /sbin/dhclient bridge-wifibox
+}
+
+wifibox_stop() {
+    assert_vm_runs
+
+    /usr/bin/printf "Stopping wifibox"
+
+    vm_stop
+    show_progress
+
+    destroy_interfaces
+    show_progress
+
+    /bin/rm ${PIDFILE} > /dev/null
+    /bin/echo "OK"
+}
+
+# This is a workaround to recover from the unfortunate state of the
+# wireless device after resume.
+kick_vmm() {
+    if ! /sbin/kldunload vmm; then
+	/bin/echo "ERROR: Some bhyve guests are still running, vmm.ko could not be unloaded."
+	exit 127
+    fi
+    /sbin/kldload vmm
+}
+
+wifibox_resume() {
+    assert_vm_runs
+
+    /usr/bin/printf "Resuming wifibox"
+
+    vm_stop
+    show_progress
+
+    /bin/sleep 1
+    kick_vmm
+    show_progress
+
+    vm_start
+    echo "OK"
+}
+
+wifibox_restart() {
+    wifibox_stop
+    wifibox_start
+}
+
+wifibox_status() {
+    if [ -f "${PIDFILE}" ]; then
+	/bin/echo "wifibox is running as pid $(cat ${PIDFILE})."
+    else
+	/bin/echo "wifibox is not running."
+	return 1
+    fi
+}
+
+check_virtfs
+
+case "$1" in
+    start) wifibox_start;;
+    stop) wifibox_stop;;
+    resume) wifibox_resume;;
+    restart) wifibox_restart;;
+    status) wifibox_status;;
+    *) echo "USAGE: $0 start | stop | restart | resume | status" ;;
+esac

@@ -1,0 +1,8 @@
+# This is an iface stanza for interfaces(5) with relatively sane
+# defaults.  Consult http://manpages.org/etc-network-interfaces/5 for
+# more.  The purpose is to bring up an interface which would be the
+# default gateway.
+
+iface eth0 inet static
+  address 10.0.0.1
+  netmask 255.255.255.0

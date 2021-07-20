@@ -1,0 +1,3 @@
+(hd0) %%PREFIX%%/share/wifibox/disk.img
+(hd1) config=%%PREFIX%%/etc/wifibox,ro
+(hd2) var=/var/run/wifibox/appliance,rw

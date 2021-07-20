@@ -1,0 +1,14 @@
+# This is configuration file for udhcpd(8) with relatively sane
+# defaults.  Consult https://udhcp.busybox.net/udhcpd.conf for more.
+# The interface should match with the one defined in the
+# interfaces.conf file: router is the address and subnet is the
+# netmask.
+
+start		10.0.0.2
+end		10.0.0.254
+max_leases	64
+interface	eth0
+opt	subnet	255.255.255.0
+opt	router	10.0.0.1
+opt     dns     8.8.8.8 8.8.4.4
+opt	lease	864000
