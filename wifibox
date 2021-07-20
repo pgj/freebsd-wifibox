@@ -62,7 +62,6 @@ vm_start() {
 		wifibox > ${GRUB_BHYVE_LOG} 2>&1
     /usr/sbin/bhyve -c "${cpus}" -m "${memory}" -AHP -u -S \
 		    -s 0,hostbridge \
-		    -s 31,lpc \
 		    -s 4:0,virtio-blk,${PREFIX}/share/wifibox/disk.img \
 		    -s 4:1,virtio-9p,config=${CONFDIR},ro \
 		    -s 4:2,virtio-9p,var=${RUNDIR}/appliance \
