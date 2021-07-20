@@ -14,6 +14,21 @@ XZ=/usr/bin/xz
 CP=/bin/cp
 CHMOD=/bin/chmod
 
+APPLIANCE_DIR=	$(RUNDIR)/appliance
+APPLIANCE_DIRS=	$(APPLIANCE_DIR)/cache \
+		$(APPLIANCE_DIR)/empty \
+		$(APPLIANCE_DIR)/lib/apk \
+		$(APPLIANCE_DIR)/lib/chrony \
+		$(APPLIANCE_DIR)/lib/iptables \
+		$(APPLIANCE_DIR)/lib/misc \
+		$(APPLIANCE_DIR)/lib/udhcpd \
+		$(APPLIANCE_DIR)/local \
+		$(APPLIANCE_DIR)/log/chrony \
+		$(APPLIANCE_DIR)/mail \
+		$(APPLIANCE_DIR)/opt \
+		$(APPLIANCE_DIR)/spool/cron \
+		$(APPLIANCE_DIR)/tmp
+
 install:
 	$(MKDIR) -p $(BINDIR)
 	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' wifibox > $(BINDIR)/wifibox
@@ -34,7 +49,7 @@ install:
 
 	$(MKDIR) -p $(LOGDIR)
 	$(MKDIR) -p $(RUNDIR)
-	$(MKDIR) -p $(RUNDIR)/appliance
+	$(MKDIR) -p $(APPLIANCE_DIRS)
 
 .MAIN: clean
 
