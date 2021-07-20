@@ -111,10 +111,6 @@ wifibox_start() {
     create_interfaces
     show_progress
 
-    /bin/mkdir -p ${LOGDIR} > /dev/null
-    /bin/mkdir -p ${RUNDIR}/appliance > /dev/null
-    show_progress
-
     vm_start
     show_progress
 

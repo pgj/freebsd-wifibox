@@ -4,6 +4,8 @@ BINDIR=$(DESTDIR)$(PREFIX)/sbin
 ETCDIR=$(DESTDIR)$(PREFIX)/etc
 RCDIR=$(ETCDIR)/rc.d
 SHAREDIR=$(DESTDIR)$(PREFIX)/share
+RUNDIR=$(DESTDIR)/var/run/wifibox
+LOGDIR=$(DESTDIR)/var/log/wifibox
 IMGXZ?=disk.img.xz
 
 MKDIR=/bin/mkdir
@@ -28,6 +30,10 @@ install:
 	$(MKDIR) -p $(RCDIR)
 	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' rc.d/wifibox > $(RCDIR)/wifibox
 	$(CHMOD) 555 $(RCDIR)/wifibox
+
+	$(MKDIR) -p $(LOGDIR)
+	$(MKDIR) -p $(RUNDIR)
+	$(MKDIR) -p $(RUNDIR)/appliance
 
 .MAIN: clean
 
