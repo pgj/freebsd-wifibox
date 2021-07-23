@@ -9,6 +9,10 @@ RUNDIR=$(DESTDIR)/var/run/wifibox
 LOGDIR=$(DESTDIR)/var/log/wifibox
 IMGXZ?=disk.img.xz
 
+SUB_LIST=	PREFIX=$(PREFIX) \
+		LOCALBASE=$(LOCALBASE)
+_SUB_LIST_EXP= 	${SUB_LIST:S/$/!g/:S/^/ -e s!%%/:S/=/%%!/}
+
 MKDIR=/bin/mkdir
 SED=/usr/bin/sed
 XZ=/usr/bin/xz
@@ -33,23 +37,23 @@ APPLIANCE_DIRS=	$(APPLIANCE_DIR)/cache \
 
 install:
 	$(MKDIR) -p $(BINDIR)
-	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' wifibox > $(BINDIR)/wifibox
+	$(SED) ${_SUB_LIST_EXP} wifibox > $(BINDIR)/wifibox
 	$(CHMOD) 555 $(BINDIR)/wifibox
 
 	$(MKDIR) -p $(SHAREDIR)/wifibox
-	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' share/device.map > $(SHAREDIR)/wifibox/device.map
+	$(SED) ${_SUB_LIST_EXP} share/device.map > $(SHAREDIR)/wifibox/device.map
 	$(CP) share/grub.cfg $(SHAREDIR)/wifibox
 	$(XZ) -cd $(IMGXZ) > $(SHAREDIR)/wifibox/disk.img
 
 	$(MKDIR) -p $(ETCDIR)/wifibox
 	$(CP) etc/* $(ETCDIR)/wifibox/
-	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' devd/wifibox.conf.sample > $(ETCDIR)/devd/wifibox.conf.sample
+	$(SED) ${_SUB_LIST_EXP} devd/wifibox.conf.sample > $(ETCDIR)/devd/wifibox.conf.sample
 
 	$(MKDIR) -p $(RCDIR)
-	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' rc.d/wifibox > $(RCDIR)/wifibox
+	$(SED) ${_SUB_LIST_EXP} rc.d/wifibox > $(RCDIR)/wifibox
 	$(CHMOD) 555 $(RCDIR)/wifibox
 
-	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' man/wifibox.8 | $(GZIP) -c > $(MANDIR)/man8/wifibox.8.gz
+	$(SED) ${_SUB_LIST_EXP} man/wifibox.8 | $(GZIP) -c > $(MANDIR)/man8/wifibox.8.gz
 
 	$(MKDIR) -p $(LOGDIR)
 	$(MKDIR) -p $(RUNDIR)
