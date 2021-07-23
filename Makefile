@@ -37,7 +37,7 @@ APPLIANCE_DIRS=	$(APPLIANCE_DIR)/cache \
 
 install:
 	$(MKDIR) -p $(BINDIR)
-	$(SED) ${_SUB_LIST_EXP} wifibox > $(BINDIR)/wifibox
+	$(SED) ${_SUB_LIST_EXP} sbin/wifibox > $(BINDIR)/wifibox
 	$(CHMOD) 555 $(BINDIR)/wifibox
 
 	$(MKDIR) -p $(SHAREDIR)/wifibox
