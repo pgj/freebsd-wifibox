@@ -4,6 +4,7 @@ BINDIR=$(DESTDIR)$(PREFIX)/sbin
 ETCDIR=$(DESTDIR)$(PREFIX)/etc
 RCDIR=$(ETCDIR)/rc.d
 SHAREDIR=$(DESTDIR)$(PREFIX)/share
+MANDIR=$(DESTDIR)$(PREFIX)/man
 RUNDIR=$(DESTDIR)/var/run/wifibox
 LOGDIR=$(DESTDIR)/var/log/wifibox
 IMGXZ?=disk.img.xz
@@ -13,6 +14,7 @@ SED=/usr/bin/sed
 XZ=/usr/bin/xz
 CP=/bin/cp
 CHMOD=/bin/chmod
+GZIP=/usr/bin/gzip
 
 APPLIANCE_DIR=	$(RUNDIR)/appliance
 APPLIANCE_DIRS=	$(APPLIANCE_DIR)/cache \
@@ -46,6 +48,8 @@ install:
 	$(MKDIR) -p $(RCDIR)
 	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' rc.d/wifibox > $(RCDIR)/wifibox
 	$(CHMOD) 555 $(RCDIR)/wifibox
+
+	$(SED) -e 's!%%PREFIX%%!$(PREFIX)!g' -e 's!%%LOCALBASE%%!$(LOCALBASE)!g' man/wifibox.8 | $(GZIP) -c > $(MANDIR)/man8/wifibox.8.gz
 
 	$(MKDIR) -p $(LOGDIR)
 	$(MKDIR) -p $(RUNDIR)
