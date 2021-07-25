@@ -17,6 +17,24 @@ check_virtfs() {
     fi
 }
 
+sysctl_value() {
+    /sbin/sysctl -nq "$1"
+}
+
+# shellcheck disable=SC2046
+check_iommu() {
+    local _iommu
+    local _amdvi
+
+    _iommu=$(sysctl_value "hw.vmm.iommu.enable") || /bin/echo "0"
+    _amdvi=$(sysctl_value "hw.vmm.amdvi.enable") || /bin/echo "0"
+
+    if [ "${_iommu}" -eq "0" ] && [ "${_amdvi}" -eq "0" ]; then
+	/bin/echo "ERROR: PCI pass-through is not available for bhyve."
+	exit 127
+    fi
+}
+
 check_configuration() {
     local _file="$1"
 
@@ -176,6 +194,7 @@ wifibox_status() {
     fi
 }
 
+check_iommu
 check_virtfs
 
 case "$1" in
