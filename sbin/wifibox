@@ -44,8 +44,8 @@ check_iommu() {
     local _iommu
     local _amdvi
 
-    _iommu=$(sysctl_value "hw.vmm.iommu.enable") || ${ECHO} "0"
-    _amdvi=$(sysctl_value "hw.vmm.amdvi.enable") || ${ECHO} "0"
+    _iommu=$(sysctl_value "hw.vmm.iommu.enable" || ${ECHO} "0")
+    _amdvi=$(sysctl_value "hw.vmm.amdvi.enable" || ${ECHO} "0")
 
     if [ "${_iommu}" -eq "0" ] && [ "${_amdvi}" -eq "0" ]; then
 	${ECHO} "ERROR: PCI pass-through is not available for bhyve."
