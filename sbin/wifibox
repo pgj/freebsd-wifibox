@@ -18,6 +18,7 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${DHCLIENT:=/sbin/dhclient}"
 : "${KLDLOAD:=/sbin/kldload}"
 : "${KLDUNLOAD:=/sbin/kldunload}"
+: "${KLDSTAT:=/sbin/kldstat}"
 
 : "${ECHO:=/bin/echo}"
 : "${PRINTF:=/usr/bin/printf}"
@@ -37,6 +38,13 @@ check_virtfs() {
 
 sysctl_value() {
     ${SYSCTL} -nq "$1"
+}
+
+check_vmm() {
+    if ! ${KLDSTAT} -q -m vmm; then
+	${ECHO} "ERROR: vmm.ko is not loaded."
+	exit 127
+    fi
 }
 
 # shellcheck disable=SC2046
@@ -212,6 +220,7 @@ wifibox_status() {
     fi
 }
 
+check_vmm
 check_iommu
 check_virtfs
 
