@@ -23,6 +23,8 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 
 : "${ECHO:=/bin/echo}"
 : "${PRINTF:=/usr/bin/printf}"
+: "${GREP:=/usr/bin/grep}"
+: "${SED:=/usr/bin/sed}"
 : "${SLEEP:=/bin/sleep}"
 : "${PGREP:=/bin/pgrep}"
 : "${KILL:=/bin/kill}"
@@ -31,7 +33,7 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
 
 check_virtfs() {
-    if ! (${BHYVE} -s help | grep -Fq virtio-9p); then
+    if ! (${BHYVE} -s help | ${GREP} -Fq virtio-9p); then
 	${ECHO} "ERROR: The Virtio 9p (VirtFS) bhyve interface is not available."
 	exit 127
     fi
@@ -88,7 +90,7 @@ get_ppt_device() {
     # shellcheck source=./etc/bhyve.conf.sample
     . "${CONFDIR}/bhyve.conf"
 
-    ${ECHO} "pci${passthru}" | sed 's!/!:!g'
+    ${ECHO} "pci${passthru}" | ${SED} 's!/!:!g'
 }
 
 vm_start() {
