@@ -27,7 +27,7 @@ Wifibox tries to implement as a single easy-to-use software package.
 guarantees or warranties.  It is shared in the hope that is going to
 be useful and inspiring for others.  By its nature, it is a workaround
 and shall be deprecated once the FreeBSD wireless drivers and
-networking stack are caught up with that of Linux.*
+networking stack are updated to catch up with Linux.*
 
 ## Prerequisites
 
