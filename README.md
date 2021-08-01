@@ -52,8 +52,8 @@ possible:
 
 Use the `net/wifibox` FreeBSD port which is available at the
 [freebsd-wifibox-port](https://github.com/pgj/freebsd-wifibox-port)
-repository and automatically takes of all the following details and
-offers proper removal of the installed files, hence it is a more
+repository and automatically takes care of all the following details
+and offers proper removal of the installed files, hence it is a more
 convenient way to manage the whole installation process.
 
 ### Manual Installation
