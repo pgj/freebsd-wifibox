@@ -21,6 +21,7 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${KLDLOAD:=/sbin/kldload}"
 : "${KLDUNLOAD:=/sbin/kldunload}"
 : "${KLDSTAT:=/sbin/kldstat}"
+: "${SHA256:=/sbin/sha256}"
 
 : "${ECHO:=/bin/echo}"
 : "${PRINTF:=/usr/bin/printf}"
@@ -32,6 +33,8 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${RM:=/bin/rm}"
 
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
+
+DISK_IMAGE="${PREFIX}/share/wifibox/disk.img"
 
 check_virtfs() {
     if ! (${BHYVE} -s help | ${GREP} -Fq virtio-9p); then
@@ -69,6 +72,10 @@ assert_vm_can_run() {
     check_vmm
     check_iommu
     check_virtfs
+}
+
+get_image_checksum() {
+    ${SHA256} -q "${DISK_IMAGE}"
 }
 
 check_configuration() {
@@ -117,7 +124,7 @@ vm_start() {
     ${BHYVE} -c "${cpus}" -m "${memory}" -AHP -u -S \
 	     -s 0,hostbridge \
 	     -s 31,lpc \
-	     -s 4:0,virtio-blk,${PREFIX}/share/wifibox/disk.img \
+	     -s 4:0,virtio-blk,${DISK_IMAGE} \
 	     -s 4:1,virtio-9p,config=${CONFDIR},ro \
 	     -s 4:2,virtio-9p,var=${RUNDIR}/appliance \
 	     -s 5:0,e1000,tap-wifibox \
@@ -234,6 +241,7 @@ wifibox_status() {
 
 wifibox_version() {
     ${ECHO} "wifibox version ${VERSION}"
+    ${ECHO} "Disk image checksum: $(get_image_checksum)"
 }
 
 # Do not execute the main program when sourced.
