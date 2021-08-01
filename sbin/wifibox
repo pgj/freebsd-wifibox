@@ -3,6 +3,7 @@
 
 PREFIX=%%PREFIX%%
 LOCALBASE=%%LOCALBASE%%
+VERSION=%%VERSION%%
 LOGDIR=/var/log/wifibox
 RUNDIR=/var/run/wifibox
 CONFDIR=${PREFIX}/etc/wifibox
@@ -220,6 +221,10 @@ wifibox_status() {
     fi
 }
 
+wifibox_version() {
+    ${ECHO} "wifibox version ${VERSION}"
+}
+
 check_vmm
 check_iommu
 check_virtfs
@@ -230,5 +235,6 @@ case "$1" in
     resume) wifibox_resume;;
     restart) wifibox_restart;;
     status) wifibox_status;;
-    *) ${ECHO} "USAGE: $0 start | stop | restart | resume | status" ;;
+    version) wifibox_version;;
+    *) ${ECHO} "USAGE: $0 start | stop | restart | resume | status | version" ;;
 esac

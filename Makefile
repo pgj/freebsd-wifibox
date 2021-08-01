@@ -9,16 +9,22 @@ RUNDIR=$(DESTDIR)/var/run/wifibox
 LOGDIR=$(DESTDIR)/var/log/wifibox
 IMGXZ?=disk.img.xz
 
-SUB_LIST=	PREFIX=$(PREFIX) \
-		LOCALBASE=$(LOCALBASE)
-_SUB_LIST_EXP= 	${SUB_LIST:S/$/!g/:S/^/ -e s!%%/:S/=/%%!/}
-
 MKDIR=/bin/mkdir
 SED=/usr/bin/sed
 XZ=/usr/bin/xz
 CP=/bin/cp
 CHMOD=/bin/chmod
 GZIP=/usr/bin/gzip
+GIT=$(LOCALBASE)/bin/git
+
+.if !defined(VERSION)
+VERSION!=	$(GIT) describe --tags
+.endif
+
+SUB_LIST=	PREFIX=$(PREFIX) \
+		LOCALBASE=$(LOCALBASE) \
+		VERSION=$(VERSION)
+_SUB_LIST_EXP= 	${SUB_LIST:S/$/!g/:S/^/ -e s!%%/:S/=/%%!/}
 
 APPLIANCE_DIR=	$(RUNDIR)/appliance
 APPLIANCE_DIRS=	$(APPLIANCE_DIR)/cache \

@@ -15,6 +15,8 @@
 .Cm status
 .Nm
 .Cm resume
+.Nm
+.Cm version
 .Sh DESCRIPTION
 .Nm
 deploys a Linux guest operating system with the help of
@@ -125,6 +127,10 @@ wireless device becomes unresponsive after the ACPI resume event.
 This involves reloading the
 .Xr vmm 4
 kernel module and restarting the guest.
+.It Cm version
+Display
+.Nm
+version.
 .Sh DIAGNOSTICS
 If the guest cannot start up due to problems with
 .Xr bhyve 4 ,
