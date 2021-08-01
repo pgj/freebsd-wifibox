@@ -63,13 +63,16 @@ In order to make
 .Nm
 work as a system service, the following line has to be added to
 .Pa /etc/rc.conf .
-At the same time, make sure that no FreeBSD driver is configured for
-the same device and remove all the related settings from there.
 .Bd -literal -offset indent
 wifibox_enable="YES"
 .Ed
 .Pp
-The
+At the same time, make sure that no FreeBSD driver is configured for
+the same device and remove all the related settings from there.  It is
+also assumed that the
+.Xr vmm 4
+kernel module is configured for loading on the target system at boot
+time.  The
 .Nm
 service can be then started up as follows.
 .Bd -literal -offset indent
