@@ -4,6 +4,7 @@
 PREFIX=%%PREFIX%%
 LOCALBASE=%%LOCALBASE%%
 VERSION=%%VERSION%%
+SCRIPT=${PREFIX}/sbin/wifibox
 LOGDIR=/var/log/wifibox
 RUNDIR=/var/run/wifibox
 CONFDIR=${PREFIX}/etc/wifibox
@@ -235,6 +236,9 @@ wifibox_version() {
     ${ECHO} "wifibox version ${VERSION}"
 }
 
+# Do not execute the main program when sourced.
+[ "$0" != "${SCRIPT}" ] && return 0
+
 case "$1" in
     start) wifibox_start;;
     stop) wifibox_stop;;
@@ -242,5 +246,5 @@ case "$1" in
     restart) wifibox_restart;;
     status) wifibox_status;;
     version) wifibox_version;;
-    *) ${ECHO} "USAGE: $0 start | stop | restart | resume | status | version" ;;
+    *) ${ECHO} "USAGE: ${SCRIPT} start | stop | restart | resume | status | version" ;;
 esac
