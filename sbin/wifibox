@@ -23,6 +23,7 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${KLDSTAT:=/sbin/kldstat}"
 : "${SHA256:=/sbin/sha256}"
 
+: "${CAT:=/bin/cat}"
 : "${ECHO:=/bin/echo}"
 : "${PRINTF:=/usr/bin/printf}"
 : "${GREP:=/usr/bin/grep}"
@@ -107,6 +108,14 @@ get_ppt_device() {
     ${ECHO} "pci${passthru}" | ${SED} 's!/!:!g'
 }
 
+get_vm_pid() {
+    if [ -f "${PIDFILE}" ]; then
+	${CAT} "${PIDFILE}"
+    else
+	${ECHO} ""
+    fi
+}
+
 vm_start() {
     check_configuration "${CONFDIR}/bhyve.conf"
     check_configuration "${CONFDIR}/interfaces.conf"
@@ -134,7 +143,7 @@ vm_start() {
     ${SLEEP} 1 > /dev/null
     ${PGREP} -fx "bhyve[: ].* wifibox" > ${PIDFILE} 2>&1
 
-    if [ -f "$(cat ${PIDFILE})" ]; then
+    if [ -z "$(get_vm_pid)" ]; then
 	destroy_interfaces
 	${ECHO} "ERROR: Guest could not be started, check the contents of ${BHYVE_LOG}."
 	exit 4
@@ -142,7 +151,7 @@ vm_start() {
 }
 
 vm_stop() {
-    ${KILL} -SIGTERM "$(cat ${PIDFILE})" > /dev/null
+    ${KILL} -SIGTERM "$(get_vm_pid)" > /dev/null
     ${SLEEP} 3 > /dev/null
     ${BHYVECTL} --force-poweroff --vm=wifibox >> ${BHYVE_LOG} 2>&1
     ${BHYVECTL} --destroy --vm=wifibox >> ${BHYVE_LOG} 2>&1
@@ -151,8 +160,8 @@ vm_stop() {
 }
 
 assert_vm_runs() {
-    if [ ! -f "${PIDFILE}" ]; then
-	${ECHO} "${PIDFILE} does not exist -- is not wifibox running?"
+    if [ -z "$(get_vm_pid)" ]; then
+	${ECHO} "wifibox is not running."
 	exit 1
     fi
 }
@@ -162,10 +171,13 @@ show_progress() {
 }
 
 wifibox_start() {
+    local _pid
+
     assert_vm_can_run
 
-    if [ -f "${PIDFILE}" ]; then
-	${ECHO} "${PIDFILE} already exists -- is wifibox running?"
+    _pid="$(get_vm_pid)"
+    if [ -n "${_pid}" ]; then
+	${ECHO} "wifibox is already running as PID ${_pid}."
 	exit 1
     fi
 
@@ -231,8 +243,11 @@ wifibox_restart() {
 }
 
 wifibox_status() {
-    if [ -f "${PIDFILE}" ]; then
-	${ECHO} "wifibox is running as pid $(cat ${PIDFILE})."
+    local _pid
+
+    _pid="$(get_vm_pid)"
+    if [ -n "${_pid}" ]; then
+	${ECHO} "wifibox is running as PID ${_pid}."
     else
 	${ECHO} "wifibox is not running."
 	return 1
