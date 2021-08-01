@@ -30,7 +30,6 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${SLEEP:=/bin/sleep}"
 : "${PGREP:=/bin/pgrep}"
 : "${KILL:=/bin/kill}"
-: "${RM:=/bin/rm}"
 
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
 
