@@ -1,7 +1,8 @@
 #! /bin/sh
 
 # PROVIDE: wifibox
-# REQUIRE: NETWORKING SERVERS dmesg
+# BEFORE: defaultroute
+# REQUIRE: FILESYSTEMS sysctl kld
 # KEYWORD: shutdown nojail
 
 . /etc/rc.subr
