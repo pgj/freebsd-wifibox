@@ -8,7 +8,6 @@ SCRIPT=${PREFIX}/sbin/wifibox
 LOGDIR=/var/log/wifibox
 RUNDIR=/var/run/wifibox
 CONFDIR=${PREFIX}/etc/wifibox
-PIDFILE=${RUNDIR}/pid
 BHYVE_LOG=${LOGDIR}/bhyve.log
 GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 
@@ -109,11 +108,7 @@ get_ppt_device() {
 }
 
 get_vm_pid() {
-    if [ -f "${PIDFILE}" ]; then
-	${CAT} "${PIDFILE}"
-    else
-	${ECHO} ""
-    fi
+    ${PGREP} -fx "bhyve[: ].* wifibox"
 }
 
 vm_start() {
@@ -141,7 +136,6 @@ vm_start() {
 	     wifibox > ${BHYVE_LOG} 2>&1 &
     # Give some time for bhyve to launch.
     ${SLEEP} 1 > /dev/null
-    ${PGREP} -fx "bhyve[: ].* wifibox" > ${PIDFILE} 2>&1
 
     if [ -z "$(get_vm_pid)" ]; then
 	destroy_interfaces
@@ -207,7 +201,6 @@ wifibox_stop() {
     destroy_interfaces
     show_progress
 
-    ${RM} ${PIDFILE} > /dev/null
     ${ECHO} "OK"
 }
 
