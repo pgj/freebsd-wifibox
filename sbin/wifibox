@@ -64,6 +64,12 @@ check_iommu() {
     fi
 }
 
+assert_vm_can_run() {
+    check_vmm
+    check_iommu
+    check_virtfs
+}
+
 check_configuration() {
     local _file="$1"
 
@@ -148,6 +154,8 @@ show_progress() {
 }
 
 wifibox_start() {
+    assert_vm_can_run
+
     if [ -f "${PIDFILE}" ]; then
 	${ECHO} "${PIDFILE} already exists -- is wifibox running?"
 	exit 1
@@ -226,10 +234,6 @@ wifibox_status() {
 wifibox_version() {
     ${ECHO} "wifibox version ${VERSION}"
 }
-
-check_vmm
-check_iommu
-check_virtfs
 
 case "$1" in
     start) wifibox_start;;
