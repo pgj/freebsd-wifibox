@@ -122,11 +122,16 @@ destroy_nmdm() {
 
 get_ppt_device() {
     check_configuration "${CONFDIR}/bhyve.conf"
+    passthru=
 
     # shellcheck source=./etc/bhyve.conf.sample
     . "${CONFDIR}/bhyve.conf"
 
-    ${ECHO} "pci${passthru}" | ${SED} 's!/!:!g'
+    if [ -z "${passthru}" ]; then
+	${ECHO} ""
+    else
+	${ECHO} "pci${passthru}" | ${SED} 's!/!:!g'
+    fi
 }
 
 get_vm_pid() {
@@ -137,11 +142,18 @@ get_vm_pid() {
 vm_start() {
     local _nmdm_grub_bhyve
     local _nmdm_bhyve
+    local _passthru_bhyve
+    local _ppt
 
     check_configuration "${CONFDIR}/bhyve.conf"
     check_configuration "${CONFDIR}/interfaces.conf"
     check_configuration "${CONFDIR}/udhcpd.conf"
     check_configuration "${CONFDIR}/wpa_supplicant.conf"
+
+    cpus=1
+    memory=128M
+    passthru=
+    console=no
 
     # shellcheck source=./etc/bhyve.conf.sample
     . "${CONFDIR}/bhyve.conf"
@@ -151,7 +163,15 @@ vm_start() {
 	_nmdm_bhyve="-l com1,${NMDM_A}"
     fi
 
-    ${DEVCTL} set driver -f "$(get_ppt_device)" ppt > /dev/null
+    if [ -n "${passthru}" ]; then
+	_passthru_bhyve="-s 6:0,passthru,${passthru}"
+    fi
+
+    _ppt="$(get_ppt_device)"
+    if [ -n "${_ppt}" ]; then
+	${DEVCTL} set driver -f "${_ppt}" ppt > /dev/null
+    fi
+
     ${GRUB_BHYVE} -S -M "${memory}" -r host \
 		  ${_nmdm_grub_bhyve} \
 		  -m ${PREFIX}/share/wifibox/device.map \
@@ -165,7 +185,7 @@ vm_start() {
 	     -s 4:1,virtio-9p,config=${CONFDIR},ro \
 	     -s 4:2,virtio-9p,var=${RUNDIR}/appliance \
 	     -s 5:0,e1000,tap-wifibox \
-	     -s 6:0,passthru,"${passthru}" \
+	     ${_passthru_bhyve} \
 	     wifibox > ${BHYVE_LOG} 2>&1 &
     # Give some time for bhyve to launch.
     ${SLEEP} 1 > /dev/null
@@ -179,12 +199,18 @@ vm_start() {
 }
 
 vm_stop() {
+    local _ppt
+
     ${KILL} -SIGTERM "$(get_vm_pid)" > /dev/null
     ${SLEEP} 3 > /dev/null
     ${BHYVECTL} --force-poweroff --vm=wifibox >> ${BHYVE_LOG} 2>&1
     ${BHYVECTL} --destroy --vm=wifibox >> ${BHYVE_LOG} 2>&1
     ${SLEEP} 1 > /dev/null
-    ${DEVCTL} clear driver -f "$(get_ppt_device)" > /dev/null
+
+    _ppt="$(get_ppt_device)"
+    if [ -n "${_ppt}" ]; then
+	${DEVCTL} clear driver -f "${_ppt}" > /dev/null
+    fi
 }
 
 assert_vm_runs() {

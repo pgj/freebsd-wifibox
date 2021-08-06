@@ -1,9 +1,9 @@
-# These are the default values for launching the bhyve(8) guest.  Please
-# modify the `passthru` value to match with the slot/bus/function of the
-# wireless PCI device, which can be obtained from the output of the
-# pciconf(8) tool.
+# These are the default values for launching the bhyve(8) guest.
+# Please, at least set the `passthru` value to match with the
+# slot/bus/function of the wireless PCI device, which can be obtained
+# from the output of the pciconf(8) tool.
 
-cpus=1
-memory=128M
-passthru=3/0/0
-console=no
+#cpus=1       # number of CPUs allocated for the guest
+#memory=128M  # amount of memory allocated for the guest
+#passthru=    # expected format: "s/b/f", e.g. "3/0/0"
+#console=no   # "yes" actives the nmdm(4) console
