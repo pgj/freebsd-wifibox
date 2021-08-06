@@ -1,4 +1,4 @@
-.Dd July 23, 2021
+.Dd August 6, 2021
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -15,6 +15,8 @@
 .Cm status
 .Nm
 .Cm resume
+.Nm
+.Cm console
 .Nm
 .Cm version
 .Sh DESCRIPTION
@@ -130,6 +132,13 @@ wireless device becomes unresponsive after the ACPI resume event.
 This involves reloading the
 .Xr vmm 4
 kernel module and restarting the guest.
+.It Cm console
+Attach to the running guest with
+.Xr cu 1
+through a virtual serial port.  This is recommended for
+troubleshooting problems with the guest in an interactive fashion.  It
+can also be used to perform updates, install or remove packages.  This
+has to be configured specifically in order to work.
 .It Cm version
 Display version of
 .Nm
@@ -151,7 +160,9 @@ file for messages related to the boot sequence, such as driver
 initialization, and the
 .Pa /var/run/wifibox/appliance/log/messages
 file for the run-time system messages, which are usually emitted
-by the daemons.
+by the daemons.  If all else fails, use the
+.Cm console
+command to connect to the guest.
 .Sh EXIT STATUS
 The exit status is 0 on success, and >0 if any of the commands fail.
 .Sh SEE ALSO
@@ -161,7 +172,8 @@ The exit status is 0 on success, and >0 if any of the commands fail.
 .Xr dhclient 8 ,
 .Xr resolv.conf 5 ,
 .Xr devd.conf 5 ,
-.Xr devd 8
+.Xr devd 8 ,
+.Xr cu 1
 .Sh CAVEATS
 .Nm
 supports only a single wireless network device at a time, and it has

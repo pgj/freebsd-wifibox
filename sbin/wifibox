@@ -21,6 +21,7 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${KLDUNLOAD:=/sbin/kldunload}"
 : "${KLDSTAT:=/sbin/kldstat}"
 : "${SHA256:=/sbin/sha256}"
+: "${MKNOD:=/sbin/mknod}"
 
 : "${CAT:=/bin/cat}"
 : "${ECHO:=/bin/echo}"
@@ -30,10 +31,15 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${SLEEP:=/bin/sleep}"
 : "${PGREP:=/bin/pgrep}"
 : "${KILL:=/bin/kill}"
+: "${RM:=/bin/rm}"
+: "${CU:=/usr/bin/cu}"
 
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
 
 DISK_IMAGE="${PREFIX}/share/wifibox/disk.img"
+NMDM_DEVICE=/dev/nmdm-wifibox
+NMDM_A="${NMDM_DEVICE}.1A"
+NMDM_B="${NMDM_DEVICE}.1B"
 
 check_virtfs() {
     if ! (${BHYVE} -s help | ${GREP} -Fq virtio-9p); then
@@ -97,6 +103,23 @@ destroy_interfaces() {
     ${IFCONFIG} tap-wifibox destroy > /dev/null
 }
 
+create_nmdm() {
+    check_configuration "${CONFDIR}/bhyve.conf"
+
+    # shellcheck source=./etc/bhyve.conf.sample
+    . "${CONFDIR}/bhyve.conf"
+
+    [ "${console}" != "yes" ] && return 0
+
+    [ ! -c ${NMDM_A} ] && ${MKNOD} ${NMDM_A}
+    [ ! -c ${NMDM_B} ] && ${MKNOD} ${NMDM_B}
+}
+
+destroy_nmdm() {
+    [ -c ${NMDM_A} ] && ${RM} ${NMDM_A}
+    [ -c ${NMDM_B} ] && ${RM} ${NMDM_B}
+}
+
 get_ppt_device() {
     check_configuration "${CONFDIR}/bhyve.conf"
 
@@ -110,7 +133,11 @@ get_vm_pid() {
     ${PGREP} -fx "bhyve[: ].* wifibox"
 }
 
+# shellcheck disable=SC2086
 vm_start() {
+    local _nmdm_grub_bhyve
+    local _nmdm_bhyve
+
     check_configuration "${CONFDIR}/bhyve.conf"
     check_configuration "${CONFDIR}/interfaces.conf"
     check_configuration "${CONFDIR}/udhcpd.conf"
@@ -119,12 +146,19 @@ vm_start() {
     # shellcheck source=./etc/bhyve.conf.sample
     . "${CONFDIR}/bhyve.conf"
 
+    if [ "${console}" = "yes" ]; then
+	_nmdm_grub_bhyve="-c ${NMDM_A}"
+	_nmdm_bhyve="-l com1,${NMDM_A}"
+    fi
+
     ${DEVCTL} set driver -f "$(get_ppt_device)" ppt > /dev/null
     ${GRUB_BHYVE} -S -M "${memory}" -r host \
+		  ${_nmdm_grub_bhyve} \
 		  -m ${PREFIX}/share/wifibox/device.map \
 		  -d ${PREFIX}/share/wifibox \
 		  wifibox > ${GRUB_BHYVE_LOG} 2>&1
     ${BHYVE} -c "${cpus}" -m "${memory}" -AHP -u -S \
+	     ${_nmdm_bhyve} \
 	     -s 0,hostbridge \
 	     -s 31,lpc \
 	     -s 4:0,virtio-blk,${DISK_IMAGE} \
@@ -138,6 +172,7 @@ vm_start() {
 
     if [ -z "$(get_vm_pid)" ]; then
 	destroy_interfaces
+	destroy_nmdm
 	${ECHO} "ERROR: Guest could not be started, check the contents of ${BHYVE_LOG}."
 	exit 4
     fi
@@ -179,6 +214,9 @@ wifibox_start() {
     create_interfaces
     show_progress
 
+    create_nmdm
+    show_progress
+
     vm_start
     show_progress
 
@@ -195,6 +233,9 @@ wifibox_stop() {
     ${PRINTF} "Stopping wifibox"
 
     vm_stop
+    show_progress
+
+    destroy_nmdm
     show_progress
 
     destroy_interfaces
@@ -246,6 +287,17 @@ wifibox_status() {
     fi
 }
 
+wifibox_console() {
+    if [ ! -c ${NMDM_B} ]; then
+	${ECHO} "ERROR: No null-modem device is configured."
+	exit 127
+    fi
+
+    ${ECHO} 'Connecting, type "~." to leave the session...'
+    ${CU} -s 115200 -l ${NMDM_B}
+    ${ECHO} "Finished."
+}
+
 wifibox_version() {
     ${ECHO} "wifibox version ${VERSION}"
     ${ECHO} "Disk image checksum: $(get_image_checksum)"
@@ -260,6 +312,7 @@ case "$1" in
     resume) wifibox_resume;;
     restart) wifibox_restart;;
     status) wifibox_status;;
+    console) wifibox_console;;
     version) wifibox_version;;
-    *) ${ECHO} "USAGE: ${SCRIPT} start | stop | restart | resume | status | version" ;;
+    *) ${ECHO} "USAGE: ${SCRIPT} start | stop | restart | resume | status | console | version" ;;
 esac

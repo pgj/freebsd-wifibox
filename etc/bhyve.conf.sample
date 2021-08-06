@@ -6,3 +6,4 @@
 cpus=1
 memory=128M
 passthru=3/0/0
+console=no
