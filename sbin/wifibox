@@ -52,9 +52,11 @@ sysctl_value() {
     ${SYSCTL} -nq "$1"
 }
 
-check_vmm() {
-    if ! ${KLDSTAT} -q -m vmm; then
-	${ECHO} "ERROR: vmm.ko is not loaded."
+check_kmod() {
+    local _kmod="$1"
+
+    if ! ${KLDSTAT} -q -m ${_kmod}; then
+	${ECHO} "ERROR: ${_kmod}.ko is not loaded."
 	exit 127
     fi
 }
@@ -74,7 +76,7 @@ check_iommu() {
 }
 
 assert_vm_can_run() {
-    check_vmm
+    check_kmod "vmm"
     check_iommu
     check_virtfs
 }
@@ -110,6 +112,8 @@ create_nmdm() {
     . "${CONFDIR}/bhyve.conf"
 
     [ "${console}" != "yes" ] && return 0
+
+    check_kmod "nmdm"
 
     [ ! -c ${NMDM_A} ] && ${MKNOD} ${NMDM_A}
     [ ! -c ${NMDM_B} ] && ${MKNOD} ${NMDM_B}

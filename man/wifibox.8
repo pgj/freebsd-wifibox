@@ -1,4 +1,4 @@
-.Dd August 6, 2021
+.Dd August 8, 2021
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -135,10 +135,12 @@ kernel module and restarting the guest.
 .It Cm console
 Attach to the running guest with
 .Xr cu 1
-through a virtual serial port.  This is recommended for
-troubleshooting problems with the guest in an interactive fashion.  It
-can also be used to perform updates, install or remove packages.  This
-has to be configured specifically in order to work.
+through a virtual serial port, implemented by
+.Xr nmdm 4 .
+This is recommended for troubleshooting problems with the guest in an
+interactive fashion.  It can also be used to perform updates, install
+or remove packages.  This has to be configured specifically in order
+to work.
 .It Cm version
 Display version of
 .Nm
@@ -173,7 +175,8 @@ The exit status is 0 on success, and >0 if any of the commands fail.
 .Xr resolv.conf 5 ,
 .Xr devd.conf 5 ,
 .Xr devd 8 ,
-.Xr cu 1
+.Xr cu 1 ,
+.Xr nmdm 4
 .Sh CAVEATS
 .Nm
 supports only a single wireless network device at a time, and it has
