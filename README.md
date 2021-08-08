@@ -95,8 +95,12 @@ basic usage and configuration.
 It has been reported working successfully on the following
 configurations:
 
-- FreeBSD/amd64 12.2-RELEASE + [virtio-9p patch](https://reviews.freebsd.org/D10335),
-  Intel Core i5-6300U, Intel Wireless 8260 (Lenovo Thinkpad X270)
+- Intel Core i5-6300U, Intel Wireless 8260 (Lenovo Thinkpad X270):
+  FreeBSD/amd64 12.2-RELEASE + [virtio-9p patch](https://reviews.freebsd.org/D10335),
+  FreeBSD/amd64 13.0-RELEASE
+
+Feel free to submit a pull request or write an email to have your
+configuration added here!
 
 [bhyve]: https://wiki.freebsd.org/bhyve
 [Alpine Linux]: https://alpinelinux.org/
