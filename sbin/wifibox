@@ -94,7 +94,7 @@ check_configuration() {
 
 create_interfaces() {
     ${IFCONFIG} bridge create name bridge-wifibox up > /dev/null
-    ${IFCONFIG} tap create name tap-wifibox > /dev/null
+    ${IFCONFIG} tap create name tap-wifibox up > /dev/null
     ${IFCONFIG} bridge-wifibox addm tap-wifibox > /dev/null
 }
 
