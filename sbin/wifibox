@@ -55,7 +55,7 @@ sysctl_value() {
 check_kmod() {
     local _kmod="$1"
 
-    if ! ${KLDSTAT} -q -m ${_kmod}; then
+    if ! ${KLDSTAT} -q -m "${_kmod}"; then
 	${ECHO} "ERROR: ${_kmod}.ko is not loaded."
 	exit 127
     fi
