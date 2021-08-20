@@ -41,12 +41,16 @@ possible:
 - A CPU that is supported by [bhyve] PCI pass-through (I/O MMU) with
   ~256 MB physical memory and ~700 MB disk space available.
 
-- A FreeBSD/amd64 system with the `virtio-9p` backend available for
-  [bhyve].  FreeBSD 13.0 and later has this out of the box, but it
-  could be made work on FreeBSD 12 as well (see below).
+- A supported FreeBSD/amd64 system: 11.4-RELEASE, 12.2-RELEASE, or
+  13.0-RELEASE.  14-CURRENT might work.
+
+- The [bhyve+] port which installs unofficial patches for `bhyve` to
+  fill gaps present in the base system.  For FreeBSD 11 and 12, this
+  is mandatory, but it may come handy on newer systems as well.
 
 - [grub2-bhyve](https://github.com/grehan-freebsd/grub2-bhyve) or the
-  corresponding `sysutils/grub2-bhyve` FreeBSD package.
+  corresponding `sysutils/grub2-bhyve` FreeBSD package, so the Linux
+  guest could be booted via GRUB 2.
 
 ## Installation
 
@@ -63,12 +67,18 @@ used to install all the files, as described below.  This workflow is
 mostly recommended for development and testing.
 
 ```console
-# make install PREFIX=<prefix> IMGXZ=<disk image location>
+# make install PREFIX=<prefix> BHYVE=<bhyve+ binary> IMGXZ=<disk image location>
 ```
 
 By default, `PREFIX` is set to `/usr/local`.  In addition to that, it
 is possible to set the `LOCALBASE` variable to tell if the prefix
 under which the `grub-bhyve` utility was installed is different.
+
+The `BHYVE` variable gives the location of the `bhyve` binary.  By
+default, that is the one in the base system (i.e. `/usr/sbin/bhyve`)
+but it might be unsuitable on older systems, due to lack of support
+for VirtFS/9p file system passthrough.  If [bhyve+] is installed, this
+is the way to hook it up.
 
 The `IMGXZ` variable should point to the virtual machine image to use,
 which is `disk.img.xz` by default.  Note that this file is not part of
@@ -95,12 +105,13 @@ basic usage and configuration.
 It has been reported working successfully on the following
 configurations:
 
-- Intel Core i5-6300U, Intel Wireless 8260 (Lenovo Thinkpad X270):
-  FreeBSD/amd64 12.2-RELEASE + [virtio-9p patch](https://reviews.freebsd.org/D10335),
-  FreeBSD/amd64 13.0-RELEASE
+- Intel Core i5-6300U, Intel Dual Band Wireless AC 8260 (Lenovo
+  Thinkpad X270): FreeBSD/amd64 12.2-RELEASE, FreeBSD/amd64
+  13.0-RELEASE
 
 Feel free to submit a pull request or write an email to have your
 configuration added here!
 
 [bhyve]: https://wiki.freebsd.org/bhyve
+[bhyve+]: https://github.com/pgj/freebsd-bhyve-plus-port/
 [Alpine Linux]: https://alpinelinux.org/

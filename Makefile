@@ -21,9 +21,14 @@ GIT=$(LOCALBASE)/bin/git
 VERSION!=	$(GIT) describe --tags
 .endif
 
+.if !defined(BHYVE)
+BHYVE!=		/usr/sbin/bhyve
+.endif
+
 SUB_LIST=	PREFIX=$(PREFIX) \
 		LOCALBASE=$(LOCALBASE) \
-		VERSION=$(VERSION)
+		VERSION=$(VERSION) \
+		BHYVE=$(BHYVE)
 _SUB_LIST_EXP= 	${SUB_LIST:S/$/!g/:S/^/ -e s!%%/:S/=/%%!/}
 
 APPLIANCE_DIR=	$(RUNDIR)/appliance

@@ -11,7 +11,7 @@ CONFDIR=${PREFIX}/etc/wifibox
 BHYVE_LOG=${LOGDIR}/bhyve.log
 GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 
-: "${BHYVE:=/usr/sbin/bhyve}"
+: "${BHYVE:=%%BHYVE%%}"
 : "${BHYVECTL:=/usr/sbin/bhyvectl}"
 : "${DEVCTL:=/usr/sbin/devctl}"
 : "${IFCONFIG:=/sbin/ifconfig}"
