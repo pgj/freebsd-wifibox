@@ -52,12 +52,14 @@ sysctl_value() {
     ${SYSCTL} -nq "$1"
 }
 
-check_kmod() {
+assert_kmod_loaded() {
     local _kmod="$1"
 
     if ! ${KLDSTAT} -q -m "${_kmod}"; then
-	${ECHO} "ERROR: ${_kmod}.ko is not loaded."
-	exit 127
+	if ! ${KLDLOAD} "${_kmod}"; then
+	    ${ECHO} "ERROR: ${_kmod} could not be loaded."
+	    exit 127
+	fi
     fi
 }
 
@@ -76,7 +78,7 @@ check_iommu() {
 }
 
 assert_vm_can_run() {
-    check_kmod "vmm"
+    assert_kmod_loaded "vmm"
     check_iommu
     check_virtfs
 }
@@ -113,7 +115,7 @@ create_nmdm() {
 
     [ "${console}" != "yes" ] && return 0
 
-    check_kmod "nmdm"
+    assert_kmod_loaded "nmdm"
 
     [ ! -c ${NMDM_A} ] && ${MKNOD} ${NMDM_A}
     [ ! -c ${NMDM_B} ] && ${MKNOD} ${NMDM_B}
