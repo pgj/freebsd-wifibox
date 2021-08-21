@@ -119,9 +119,9 @@ create_bridge() {
 destroy_bridge() {
     local _tap
 
+    _tap="$(get_tap_interface)"
     ${IFCONFIG} ${WIFIBOX_IF} destroy > /dev/null
 
-    _tap="$(get_tap_interface)"
     if [ -n "${_tap}" ]; then
 	${IFCONFIG} "${_tap}" destroy > /dev/null
     fi
