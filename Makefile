@@ -58,6 +58,7 @@ install:
 
 	$(MKDIR) -p $(ETCDIR)/wifibox
 	$(CP) etc/* $(ETCDIR)/wifibox/
+	$(MKDIR) -p $(ETCDIR)/devd
 	$(SED) ${_SUB_LIST_EXP} devd/wifibox.conf.sample > $(ETCDIR)/devd/wifibox.conf.sample
 
 	$(MKDIR) -p $(RCDIR)
