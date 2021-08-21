@@ -16,7 +16,6 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${DEVCTL:=/usr/sbin/devctl}"
 : "${IFCONFIG:=/sbin/ifconfig}"
 : "${SYSCTL:=/sbin/sysctl}"
-: "${DHCLIENT:=/sbin/dhclient}"
 : "${KLDLOAD:=/sbin/kldload}"
 : "${KLDUNLOAD:=/sbin/kldunload}"
 : "${KLDSTAT:=/sbin/kldstat}"
@@ -293,8 +292,6 @@ wifibox_start() {
     # Give some more time for the guest to boot up.
     ${SLEEP} 2 > /dev/null
     ${ECHO} "OK"
-
-    ${DHCLIENT} ${WIFIBOX_IF}
 }
 
 wifibox_stop() {

@@ -33,15 +33,13 @@ FreeBSD at all.
 .Pp
 Once the guest has been started up successfully,
 .Nm
-configures the
+exposes the
 .Sy wifibox0
 .Xr bridge 4
-networking interface and utilizes
-.Xr dhclient 8
-to request for a dynamic IP address and configure the default gateway
-and the name servers for
-.Xr resolv.conf 5 ,
-after which the wireless card is ready to use.
+networking interface, which needs to be configured further with the
+help of
+.Xr rc.conf 5 ,
+so that the traffic could start flowing through the wireless card.
 .Pp
 There is a
 .Nm
@@ -64,21 +62,57 @@ directory to keep them working after resume.
 In order to make
 .Nm
 work as a system service, the following line has to be added to
-.Pa /etc/rc.conf .
+.Xr rc.conf 5 .
 .Bd -literal -offset indent
 wifibox_enable="YES"
 .Ed
 .Pp
 At the same time, make sure that no FreeBSD driver is configured for
 the same device and remove all the related settings from there.  It is
-also assumed that the
+also recommended to configure the
 .Xr vmm 4
-kernel module is configured for loading on the target system at boot
-time.  The
+kernel module for loading on the target system at boot time.  The
 .Nm
 service can be then started up as follows.
 .Bd -literal -offset indent
 # service wifibox start
+.Ed
+.Pp
+After
+.Nm
+started successfully, the IP address for the corresponding networking
+interface needs to be configured in
+.Xr rc.conf 5 .
+For example, assignment of a dynamic IP address can requested by
+adding this line below.
+.Bd -literal -offset indent
+ifconfig_wifibox0="SYNCDHCP"
+.Ed
+.Pp
+If preferred, static IP address configuration is possible with this
+method, which can be faster.  Assume that
+.Sy wifibox0
+is configured as 10.0.0.1/24 on the guest's side, and the host wants
+to use the 10.0.0.2/24 IP address.
+.Bd -literal -offset indent
+defaultrouter="10.0.0.1"
+ifconfig_wifibox0="inet 10.0.0.2/24"
+.Ed
+.Pp
+The
+.Sy wifibox0
+networking interface can be brought up with the use of the
+.Nm netif
+service.
+.Bd -literal -offset indent
+# service netif start wifibox0
+.Ed
+.Pp
+For static IP address configurations, the
+.Nm routing
+service has to be restart as well.
+.Bd -literal -offset indent
+# service routing restart
 .Ed
 .Pp
 If the
@@ -171,8 +205,7 @@ The exit status is 0 on success, and >0 if any of the commands fail.
 .Xr bhyve 8 ,
 .Xr vmm 4 ,
 .Xr bridge 4 ,
-.Xr dhclient 8 ,
-.Xr resolv.conf 5 ,
+.Xr rc.conf 5 ,
 .Xr devd.conf 5 ,
 .Xr devd 8 ,
 .Xr cu 1 ,
