@@ -22,7 +22,7 @@ VERSION!=	$(GIT) describe --tags
 .endif
 
 .if !defined(BHYVE)
-BHYVE!=		/usr/sbin/bhyve
+BHYVE=		/usr/sbin/bhyve
 .endif
 
 SUB_LIST=	PREFIX=$(PREFIX) \
