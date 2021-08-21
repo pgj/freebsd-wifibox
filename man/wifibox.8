@@ -1,4 +1,4 @@
-.Dd August 8, 2021
+.Dd August 21, 2021
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -34,7 +34,7 @@ FreeBSD at all.
 Once the guest has been started up successfully,
 .Nm
 configures the
-.Sy bridge-wifibox
+.Sy wifibox0
 .Xr bridge 4
 networking interface and utilizes
 .Xr dhclient 8
@@ -102,7 +102,7 @@ script itself are listed below for the reference.
 Start
 .Nm .
 The
-.Sy bridge-wifibox
+.Sy wifibox0
 interface is created and the guest is attached to the configured
 PCI wireless network device.  The network interface of the FreeBSD
 driver on the same device must not be configured.
@@ -110,7 +110,7 @@ driver on the same device must not be configured.
 Stop
 .Nm .
 The
-.Sy bridge-wifibox
+.Sy wifibox0
 interface is destroyed and the guest is detached from the configured
 PCI wireless network device.  After that, the FreeBSD driver is free
 to take over the device.

@@ -37,9 +37,13 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
 
 DISK_IMAGE="${PREFIX}/share/wifibox/disk.img"
+
 NMDM_DEVICE=/dev/nmdm-wifibox
 NMDM_A="${NMDM_DEVICE}.1A"
 NMDM_B="${NMDM_DEVICE}.1B"
+
+WIFIBOX_IF="wifibox0"
+WIFIBOX_VM="wifibox"
 
 check_virtfs() {
     if ! (${BHYVE} -s help | ${GREP} -Fq virtio-9p); then
@@ -96,15 +100,31 @@ check_configuration() {
     fi
 }
 
-create_interfaces() {
-    ${IFCONFIG} bridge create name bridge-wifibox up > /dev/null
-    ${IFCONFIG} tap create name tap-wifibox up > /dev/null
-    ${IFCONFIG} bridge-wifibox addm tap-wifibox > /dev/null
+get_tap_interface() {
+    if (${IFCONFIG} | ${GREP} -Fq "${WIFIBOX_IF}: "); then
+	${IFCONFIG} "${WIFIBOX_IF}" | ${GREP} -F member | ${SED} -E 's/^.*member:.*(tap[^ ]*).*$/\1/'
+    else
+	${ECHO} ""
+    fi
 }
 
-destroy_interfaces() {
-    ${IFCONFIG} bridge-wifibox destroy > /dev/null
-    ${IFCONFIG} tap-wifibox destroy > /dev/null
+create_bridge() {
+    local _tap
+
+    ${IFCONFIG} bridge create name ${WIFIBOX_IF} up > /dev/null
+    _tap="$(${IFCONFIG} tap create up)"
+    ${IFCONFIG} ${WIFIBOX_IF} addm "${_tap}" > /dev/null
+}
+
+destroy_bridge() {
+    local _tap
+
+    ${IFCONFIG} ${WIFIBOX_IF} destroy > /dev/null
+
+    _tap="$(get_tap_interface)"
+    if [ -n "${_tap}" ]; then
+	${IFCONFIG} "${_tap}" destroy > /dev/null
+    fi
 }
 
 create_nmdm() {
@@ -141,7 +161,20 @@ get_ppt_device() {
 }
 
 get_vm_pid() {
-    ${PGREP} -fx "bhyve[: ].* wifibox"
+    local _process
+
+    _process="$(basename ${BHYVE})"
+    ${PGREP} -fx "${_process}[: ].* ${WIFIBOX_VM}"
+}
+
+destroy_vm() {
+    ${BHYVECTL} --destroy --vm=${WIFIBOX_VM} >> ${BHYVE_LOG} 2>&1
+    ${SLEEP} 1 > /dev/null
+
+    _ppt="$(get_ppt_device)"
+    if [ -n "${_ppt}" ]; then
+	${DEVCTL} clear driver -f "${_ppt}" > /dev/null
+    fi
 }
 
 # shellcheck disable=SC2086
@@ -149,7 +182,9 @@ vm_start() {
     local _nmdm_grub_bhyve
     local _nmdm_bhyve
     local _passthru_bhyve
+    local _tap_bhyve
     local _ppt
+    local _tap
 
     check_configuration "${CONFDIR}/bhyve.conf"
     check_configuration "${CONFDIR}/interfaces.conf"
@@ -178,11 +213,19 @@ vm_start() {
 	${DEVCTL} set driver -f "${_ppt}" ppt > /dev/null
     fi
 
+    _tap="$(get_tap_interface)"
+    if [ -n "${_tap}" ]; then
+	_tap_bhyve="-s 5:0,e1000,${_tap}"
+    else
+	${ECHO} "ERROR: No tap(4) interface is available."
+	exit 5
+    fi
+
     ${GRUB_BHYVE} -S -M "${memory}" -r host \
 		  ${_nmdm_grub_bhyve} \
 		  -m ${PREFIX}/share/wifibox/device.map \
 		  -d ${PREFIX}/share/wifibox \
-		  wifibox > ${GRUB_BHYVE_LOG} 2>&1
+		  ${WIFIBOX_VM} > ${GRUB_BHYVE_LOG} 2>&1
     ${BHYVE} -c "${cpus}" -m "${memory}" -AHP -u -S \
 	     ${_nmdm_bhyve} \
 	     -s 0,hostbridge \
@@ -190,15 +233,16 @@ vm_start() {
 	     -s 4:0,virtio-blk,${DISK_IMAGE} \
 	     -s 4:1,virtio-9p,config=${CONFDIR},ro \
 	     -s 4:2,virtio-9p,var=${RUNDIR}/appliance \
-	     -s 5:0,e1000,tap-wifibox \
+	     ${_tap_bhyve} \
 	     ${_passthru_bhyve} \
-	     wifibox > ${BHYVE_LOG} 2>&1 &
+	     ${WIFIBOX_VM} > ${BHYVE_LOG} 2>&1 &
     # Give some time for bhyve to launch.
     ${SLEEP} 1 > /dev/null
 
     if [ -z "$(get_vm_pid)" ]; then
-	destroy_interfaces
+	destroy_vm
 	destroy_nmdm
+	destroy_bridge
 	${ECHO} "ERROR: Guest could not be started, check the contents of ${BHYVE_LOG}."
 	exit 4
     fi
@@ -209,14 +253,8 @@ vm_stop() {
 
     ${KILL} -SIGTERM "$(get_vm_pid)" > /dev/null
     ${SLEEP} 3 > /dev/null
-    ${BHYVECTL} --force-poweroff --vm=wifibox >> ${BHYVE_LOG} 2>&1
-    ${BHYVECTL} --destroy --vm=wifibox >> ${BHYVE_LOG} 2>&1
-    ${SLEEP} 1 > /dev/null
-
-    _ppt="$(get_ppt_device)"
-    if [ -n "${_ppt}" ]; then
-	${DEVCTL} clear driver -f "${_ppt}" > /dev/null
-    fi
+    ${BHYVECTL} --force-poweroff --vm=${WIFIBOX_VM} >> ${BHYVE_LOG} 2>&1
+    destroy_vm
 }
 
 assert_vm_runs() {
@@ -243,7 +281,7 @@ wifibox_start() {
 
     ${PRINTF} "Launching wifibox"
 
-    create_interfaces
+    create_bridge
     show_progress
 
     create_nmdm
@@ -256,7 +294,7 @@ wifibox_start() {
     ${SLEEP} 2 > /dev/null
     ${ECHO} "OK"
 
-    ${DHCLIENT} bridge-wifibox
+    ${DHCLIENT} ${WIFIBOX_IF}
 }
 
 wifibox_stop() {
@@ -270,7 +308,7 @@ wifibox_stop() {
     destroy_nmdm
     show_progress
 
-    destroy_interfaces
+    destroy_bridge
     show_progress
 
     ${ECHO} "OK"
@@ -280,7 +318,7 @@ wifibox_stop() {
 # wireless device after resume.
 kick_vmm() {
     if ! ${KLDUNLOAD} vmm; then
-	${ECHO} "ERROR: Some bhyve guests are still running, vmm.ko could not be unloaded."
+	${ECHO} "ERROR: Some other bhyve guests might be running, vmm.ko could not be unloaded."
 	exit 127
     fi
     ${KLDLOAD} vmm
