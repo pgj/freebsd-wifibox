@@ -25,10 +25,21 @@ VERSION!=	$(GIT) describe --tags
 BHYVE=		/usr/sbin/bhyve
 .endif
 
+.if !defined(BHYVECTL)
+BHYVECTL=	/usr/sbin/bhyvectl
+.endif
+
+.if !defined(VMM_KO)
+VMM_KO=		vmm.ko
+.endif
+
 SUB_LIST=	PREFIX=$(PREFIX) \
 		LOCALBASE=$(LOCALBASE) \
 		VERSION=$(VERSION) \
-		BHYVE=$(BHYVE)
+		BHYVE=$(BHYVE) \
+		BHYVECTL=$(BHYVECTL) \
+		VMM_KO=$(VMM_KO)
+
 _SUB_LIST_EXP= 	${SUB_LIST:S/$/!g/:S/^/ -e s!%%/:S/=/%%!/}
 
 APPLIANCE_DIR=	$(RUNDIR)/appliance

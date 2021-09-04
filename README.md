@@ -67,18 +67,18 @@ used to install all the files, as described below.  This workflow is
 mostly recommended for development and testing.
 
 ```console
-# make install PREFIX=<prefix> BHYVE=<bhyve+ binary> IMGXZ=<disk image location>
+# make install \
+    PREFIX=<prefix> \
+    LOCALBASE=<prefix of the grub-bhyve package> \
+    IMGXZ=<disk image location> \
+    BHYVE=<bhyve binary location> \
+    BHYVECTL=<bhyvectl binary location> \
+    VMM_KO=<vmm kernel module location>
 ```
 
 By default, `PREFIX` is set to `/usr/local`.  In addition to that, it
 is possible to set the `LOCALBASE` variable to tell if the prefix
 under which the `grub-bhyve` utility was installed is different.
-
-The `BHYVE` variable gives the location of the `bhyve` binary.  By
-default, that is the one in the base system (i.e. `/usr/sbin/bhyve`)
-but it might be unsuitable on older systems, due to lack of support
-for VirtFS/9p file system passthrough.  If [bhyve+] is installed, this
-is the way to hook it up.
 
 The `IMGXZ` variable should point to the virtual machine image to use,
 which is `disk.img.xz` by default.  Note that this file is not part of
@@ -90,6 +90,14 @@ repository, under the
 Grab one of those files (ideally, the latest), and either place it in
 working directory as `disk.img.xz` or set the value of `IMGXZ` to the
 location of the downloaded file on the file system.
+
+The `BHYVE`, `BHYVECTL`, and `VMM_KO` variables give the location of
+the `bhyve`, `bhyvectl` binaries, and the `vmm.ko` kernel module
+respectively.  By default, these are the ones in the base system
+(i.e. `/usr/sbin/bhyve`) but they might be insufficient on older
+systems, due to lack of support for VirtFS/9p file system passthrough
+or missing fixes.  If [bhyve+] is installed, this is the way to hook
+it up.
 
 ## Documentation
 

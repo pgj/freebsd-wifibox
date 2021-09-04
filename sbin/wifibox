@@ -12,7 +12,8 @@ BHYVE_LOG=${LOGDIR}/bhyve.log
 GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 
 : "${BHYVE:=%%BHYVE%%}"
-: "${BHYVECTL:=/usr/sbin/bhyvectl}"
+: "${BHYVECTL:=%%BHYVECTL%%}"
+: "${VMM_KO:=%%VMM_KO%%}"
 : "${DEVCTL:=/usr/sbin/devctl}"
 : "${IFCONFIG:=/sbin/ifconfig}"
 : "${SYSCTL:=/sbin/sysctl}"
@@ -57,10 +58,11 @@ sysctl_value() {
 
 assert_kmod_loaded() {
     local _kmod="$1"
+    local _kmod_file="$2"
 
     if ! ${KLDSTAT} -q -m "${_kmod}"; then
-	if ! ${KLDLOAD} "${_kmod}"; then
-	    ${ECHO} "ERROR: ${_kmod} could not be loaded."
+	if ! ${KLDLOAD} "${_kmod_file}"; then
+	    ${ECHO} "ERROR: ${_kmod_file} could not be loaded."
 	    exit 127
 	fi
     fi
@@ -81,7 +83,7 @@ check_iommu() {
 }
 
 assert_vm_can_run() {
-    assert_kmod_loaded "vmm"
+    assert_kmod_loaded "vmm" "${VMM_KO}"
     check_iommu
     check_virtfs
 }
@@ -134,7 +136,7 @@ create_nmdm() {
 
     [ "${console}" != "yes" ] && return 0
 
-    assert_kmod_loaded "nmdm"
+    assert_kmod_loaded "nmdm" "nmdm.ko"
 
     [ ! -c ${NMDM_A} ] && ${MKNOD} ${NMDM_A}
     [ ! -c ${NMDM_B} ] && ${MKNOD} ${NMDM_B}
@@ -318,7 +320,7 @@ kick_vmm() {
 	${ECHO} "ERROR: Some other bhyve guests might be running, vmm.ko could not be unloaded."
 	exit 127
     fi
-    ${KLDLOAD} vmm
+    ${KLDLOAD} "${VMM_KO}"
 }
 
 wifibox_resume() {
