@@ -114,9 +114,8 @@ It has been reported working successfully on the following
 configurations:
 
 - Intel Core i5-6300U, Intel Dual Band Wireless AC 8260 (Lenovo
-  Thinkpad X270): FreeBSD/amd64 12.2-RELEASE, FreeBSD/amd64
-  13.0-RELEASE, FreeBSD/amd64 14-CURRENT (snapshot
-  `20210819-eba8e643b19-248803`).
+  Thinkpad X270): 11.4-RELEASE, 12.2-RELEASE, 13.0-RELEASE, 14-CURRENT
+  (snapshot `20210819-eba8e643b19-248803`).
 
 Feel free to submit a pull request or write an email to have your
 configuration added here!
