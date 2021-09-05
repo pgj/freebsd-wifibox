@@ -69,7 +69,7 @@ mostly recommended for development and testing.
 ```console
 # make install \
     PREFIX=<prefix> \
-    LOCALBASE=<prefix of the grub-bhyve package> \
+    LOCALBASE=<prefix of the grub2-bhyve package> \
     IMGXZ=<disk image location> \
     BHYVE=<bhyve binary location> \
     BHYVECTL=<bhyvectl binary location> \
