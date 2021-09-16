@@ -1,5 +1,7 @@
-# This is a devd(8) configuration file to run the resume action of
-# wifibox on the ACPI resume event.
+# This is a `devd(8)` configuration file to run the resume action of
+# wifibox on the ACPI resume event.  Review the contents and create a
+# copy of it without the `.sample` extension to use it.  Restart the
+# `devd` service once the file has been created.
 
 notify 11 {
         match "system"          "ACPI";

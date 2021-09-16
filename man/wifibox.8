@@ -1,4 +1,4 @@
-.Dd August 21, 2021
+.Dd September 16, 2021
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -26,10 +26,10 @@ deploys a Linux guest operating system with the help of
 and attaches its driver to a wireless network device on the host system
 via the PCI pass-through capabilities of the
 .Xr vmm 4
-kernel module.  This way the original FreeBSD wireless network driver
-can be replaced for the performance and stability of the one provided
-by the Linux kernel, or put into use if the device is not supported by
-FreeBSD at all.
+kernel module.  This way the original FreeBSD PCI wireless network
+card driver can be replaced for the performance and stability of the
+one provided by the Linux kernel, or put into use if the device is not
+supported by FreeBSD at all.
 .Pp
 Once the guest has been started up successfully,
 .Nm
@@ -52,12 +52,14 @@ files provided in the
 directory and follow the instructions to create a working configuration,
 otherwise
 .Nm
-will refuse to start.  For systems that might be put in sleep mode, e.g.
-laptops, it is recommended to take a look at the sample
+will refuse to start.  For systems that might be put in sleep mode,
+e.g. laptops, there is a sample
 .Xr devd.conf 5
-configuration file placed in the
+configuration file in the
 .Pa %%PREFIX%%/etc/devd
-directory to keep them working after resume.
+directory that can be used to restart
+.Nm
+on resume.
 .Pp
 In order to make
 .Nm
@@ -68,10 +70,7 @@ wifibox_enable="YES"
 .Ed
 .Pp
 At the same time, make sure that no FreeBSD driver is configured for
-the same device and remove all the related settings from there.  It is
-also recommended to configure the
-.Xr vmm 4
-kernel module for loading on the target system at boot time.  The
+the same device and remove all the related settings from there.  The
 .Nm
 service can be then started up as follows.
 .Bd -literal -offset indent
@@ -151,7 +150,7 @@ to take over the device.
 .It Cm restart
 Restart
 .Nm ,
-which is a sequential combination of the
+which is a sequential composition of the
 .Cm stop
 and
 .Cm start
@@ -174,7 +173,10 @@ through a virtual serial port, implemented by
 This is recommended for troubleshooting problems with the guest in an
 interactive fashion.  It can also be used to perform updates, install
 or remove packages.  This has to be configured specifically in order
-to work.
+to work.  The actual way of logging into the system as an
+administrator depends on the VM image in use.  Most of the time the
+.Sy root
+user with a blank password works.
 .It Cm version
 Display version of
 .Nm
