@@ -28,6 +28,8 @@ GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
 : "${PRINTF:=/usr/bin/printf}"
 : "${GREP:=/usr/bin/grep}"
 : "${SED:=/usr/bin/sed}"
+: "${TAIL:=/usr/bin/tail}"
+: "${HEAD:=/usr/bin/head}"
 : "${SLEEP:=/bin/sleep}"
 : "${PGREP:=/bin/pgrep}"
 : "${KILL:=/bin/kill}"
@@ -58,14 +60,39 @@ sysctl_value() {
 
 assert_kmod_loaded() {
     local _kmod="$1"
-    local _kmod_file="$2"
+    local _kmod_file
+
+    if [ -n "$2" ]; then
+	_kmod_file="$2"
+    else
+	_kmod_file="${_kmod}"
+    fi
 
     if ! ${KLDSTAT} -q -m "${_kmod}"; then
 	if ! ${KLDLOAD} "${_kmod_file}"; then
-	    ${ECHO} "ERROR: ${_kmod_file} could not be loaded."
+	    ${ECHO} "ERROR: ${_kmod_file} kernel module could not be loaded."
 	    exit 127
 	fi
     fi
+}
+
+assert_vmm_loaded() {
+    local _kmod_path
+
+    if ${KLDSTAT} -q -m vmm; then
+	_kmod_path=$(${KLDSTAT} -v -n vmm | ${TAIL} +2 | ${HEAD} -1 | ${SED} -e 's![^(]*(\([^)]*\))!\1!')
+
+	if [ "${_kmod_path}" != "${VMM_KO}" ]; then
+	    if ! ${KLDUNLOAD} vmm; then
+		${ECHO} "ERROR: vmm.ko is loaded from a different location, but cannot be replaced."
+		${ECHO} "  Available: ${_kmod_path}"
+		${ECHO} "  Expected: ${VMM_KO}"
+		exit 127
+	    fi
+	fi
+    fi
+
+    assert_kmod_loaded "vmm" "${VMM_KO}"
 }
 
 # shellcheck disable=SC2046
@@ -83,7 +110,7 @@ check_iommu() {
 }
 
 assert_vm_can_run() {
-    assert_kmod_loaded "vmm" "${VMM_KO}"
+    assert_vmm_loaded
     check_iommu
     check_virtfs
 }
@@ -136,7 +163,7 @@ create_nmdm() {
 
     [ "${console}" != "yes" ] && return 0
 
-    assert_kmod_loaded "nmdm" "nmdm.ko"
+    assert_kmod_loaded "nmdm"
 
     [ ! -c ${NMDM_A} ] && ${MKNOD} ${NMDM_A}
     [ ! -c ${NMDM_B} ] && ${MKNOD} ${NMDM_B}
