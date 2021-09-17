@@ -384,6 +384,8 @@ wifibox_status() {
 }
 
 wifibox_console() {
+    assert_vm_runs
+
     if [ ! -c ${NMDM_B} ]; then
 	${ECHO} "ERROR: No null-modem device is configured."
 	exit 127
