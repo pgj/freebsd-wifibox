@@ -117,6 +117,9 @@ configurations:
   Thinkpad X270): 11.4-RELEASE, 12.2-RELEASE, 13.0-RELEASE, 14-CURRENT
   (snapshot `20210819-eba8e643b19-248803`).
 
+- Intel Core i7-4600M, Intel Centrino Advanced-N 6235 (Dell Latitude
+  E6440): 13.0-RELEASE.
+
 Feel free to submit a pull request or write an email to have your
 configuration added here!
 
