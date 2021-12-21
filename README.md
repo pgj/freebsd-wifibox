@@ -113,15 +113,11 @@ basic usage and configuration.
 It has been reported working successfully on the following
 configurations:
 
-- Intel Core i5-6300U, Intel Dual Band Wireless AC 8260 (Lenovo
-  Thinkpad X270): 11.4-RELEASE, 12.2-RELEASE, 13.0-RELEASE, 14-CURRENT
-  (snapshot `20210819-eba8e643b19-248803`).
-
-- Intel Core i7-4600M, Intel Centrino Advanced-N 6235 (Dell Latitude
-  E6440): 13.0-RELEASE.
-  
-- Intel Core i5-10210U, Intel Dual Band Wireless AC 9560 (System 76 
-  Lemur Pro 'LEMP9'): 13.0-RELEASE
+| CPU | Wireless NIC | Model | FreeBSD |
+| :-- | :----------- | :---- | :------ |
+| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 11.4-RELEASE, 12.2-RELEASE, 13.0-RELEASE, 14-CURRENT (snapshot `20210819-eba8e643b19-248803`) |
+| Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
+| Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 
 Feel free to submit a pull request or write an email to have your
 configuration added here!
