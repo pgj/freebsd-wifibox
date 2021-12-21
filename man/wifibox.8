@@ -1,4 +1,4 @@
-.Dd September 16, 2021
+.Dd December 21, 2021
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -183,14 +183,14 @@ Display version of
 and the SHA-256 hash of the guest disk image.  The output is suitable
 for reporting errors.  Note that custom images are not supported.
 .Sh DIAGNOSTICS
-If the guest cannot start up due to problems with
-.Xr bhyve 4 ,
-check the
-.Pa /var/log/wifibox/bhyve.log
-and
-.Pa /var/log/wifibox/grub-bhyve.log
-files for errors.  The log files of the guest are exported to the host
-and they are made available under the
+If
+.Nm
+does not have behave in the expected way, check
+.Pa /var/log/wifibox/wifibox.log
+for errors.  This file holds messages about the progress of each
+executed command, and their amount depends on the configured level of
+logging.  The log files of the guest are exported to the host and they
+are made available under the
 .Pa /var/run/wifibox/appliance/log
 directory.  There it is recommend to check the
 .Pa /var/run/wifibox/appliance/log/dmesg

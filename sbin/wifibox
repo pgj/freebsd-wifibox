@@ -8,8 +8,7 @@ SCRIPT=${PREFIX}/sbin/wifibox
 LOGDIR=/var/log/wifibox
 RUNDIR=/var/run/wifibox
 CONFDIR=${PREFIX}/etc/wifibox
-BHYVE_LOG=${LOGDIR}/bhyve.log
-GRUB_BHYVE_LOG=${LOGDIR}/grub-bhyve.log
+WIFIBOX_LOG=${LOGDIR}/wifibox.log
 
 : "${BHYVE:=%%BHYVE%%}"
 : "${BHYVECTL:=%%BHYVECTL%%}"
@@ -47,9 +46,76 @@ NMDM_B="${NMDM_DEVICE}.1B"
 WIFIBOX_IF="wifibox0"
 WIFIBOX_VM="wifibox"
 
+log() {
+    local _type="$1"
+    local _level
+    local _message="$2"
+    local _timestamp
+    local _config="${CONFDIR}/core.conf"
+    local _loglevel
+
+    _timestamp="$(date +'%FT%H:%M:%S%z')"
+
+    if [ ! -f "${_config}" ]; then
+	${ECHO} "ERROR: ${_config} is missing, please create it from the sample."
+	exit 3
+    fi
+
+    loglevel=warn
+
+    # shellcheck source=./etc/core.conf.sample
+    . "${_config}"
+
+    case ${loglevel} in
+	[Ee][Rr][Rr][Oo][Rr]) _loglevel=1;;
+	[Ww][Aa][Rr][Nn]) _loglevel=2;;
+	[Ii][Nn][Ff][Oo]) _loglevel=3;;
+	[Dd][Ee][Bb][Uu][Gg]) _loglevel=4;;
+	*) _loglevel=0;;
+    esac
+
+    case ${_type} in
+	error) [ ${_loglevel} -lt 1 ] && return 0;;
+	warn) [ ${_loglevel} -lt 2 ] && return 0;;
+	info) [ ${_loglevel} -lt 3 ] && return 0;;
+	debug) [ ${_loglevel} -lt 4 ] && return 0;;
+	*) return 0;;
+    esac
+
+    _level="$(${PRINTF} "%-5s" "${_type}" | tr "[:lower:]" "[:upper:]")"
+    ${ECHO} "${_timestamp} ${_level} ${_message}" >> ${WIFIBOX_LOG}
+
+    case ${_type} in
+	error) ${ECHO} "ERROR: ${_message}.";;
+	warn) ${ECHO} "WARNING: ${_message}.";;
+    esac
+}
+
+output() {
+    local _message="$1"
+
+    log info "Output: ${_message}"
+    ${ECHO} "${_message}."
+}
+
+capture_output() {
+    local _type="$1"
+    local _id="$2"
+
+    while read -r message; do
+	log "${_type}" "[${_id}] ${message}"
+    done
+}
+
 check_virtfs() {
-    if ! (${BHYVE} -s help | ${GREP} -Fq virtio-9p); then
-	${ECHO} "ERROR: The Virtio 9p (VirtFS) bhyve interface is not available."
+    local _backends
+
+    _backends=$(${BHYVE} -s help)
+    log debug "Backends reported by bhyve:"
+    echo "${_backends}" | capture_output debug bhyve
+
+    if ! (${ECHO} "${_backends}" | ${GREP} -Fq virtio-9p); then
+        log error "The Virtio 9p (VirtFS) bhyve interface is not available"
 	exit 127
     fi
 }
@@ -68,27 +134,40 @@ assert_kmod_loaded() {
 	_kmod_file="${_kmod}"
     fi
 
+    log debug "assert loaded: kmod=${_kmod}, kmod_file=${_kmod_file}"
+
     if ! ${KLDSTAT} -q -m "${_kmod}"; then
+	log debug "Kernel module ${_kmod} is not loaded"
+
 	if ! ${KLDLOAD} "${_kmod_file}"; then
-	    ${ECHO} "ERROR: ${_kmod_file} kernel module could not be loaded."
+	    log error "${_kmod_file} kernel module could not be loaded"
 	    exit 127
 	fi
+
+	log debug "Kernel module ${_kmod} was loaded successfully"
     fi
+}
+
+get_kmod_path() {
+    local _kmod="$1"
+
+    ${KLDSTAT} -v -n "${_kmod}" \
+	| ${TAIL} +2 \
+	| ${HEAD} -1 \
+	| ${SED} -e 's![^(]*(\([^)]*\))!\1!'
 }
 
 assert_vmm_loaded() {
     local _kmod_path
 
     if ${KLDSTAT} -q -m vmm; then
-	_kmod_path=$(${KLDSTAT} -v -n vmm | ${TAIL} +2 | ${HEAD} -1 | ${SED} -e 's![^(]*(\([^)]*\))!\1!')
+	_kmod_path="$(get_kmod_path vmm)"
+	log info "vmm.ko is expected at path: ${VMM_KO}"
+	log info "vmm.ko is found at path: ${_kmod_path}"
 
-	if [ "${_kmod_path}" != "${VMM_KO}" ]; then
-	    if ! ${KLDUNLOAD} vmm; then
-		${ECHO} "ERROR: vmm.ko is loaded from a different location, but cannot be replaced."
-		${ECHO} "  Available: ${_kmod_path}"
-		${ECHO} "  Expected: ${VMM_KO}"
-		exit 127
-	    fi
+	if [ "${_kmod_path}" != "${VMM_KO}" ] && ! ${KLDUNLOAD} vmm; then
+	    log error "vmm.ko is loaded from a different location, but cannot be replaced"
+	    exit 127
 	fi
     fi
 
@@ -102,9 +181,10 @@ check_iommu() {
 
     _iommu=$(sysctl_value "hw.vmm.iommu.enable" || ${ECHO} "0")
     _amdvi=$(sysctl_value "hw.vmm.amdvi.enable" || ${ECHO} "0")
+    log debug "assert hardware support present: iommu=${_iommu}, amdvi=${_amdvi}"
 
     if [ "${_iommu}" -eq "0" ] && [ "${_amdvi}" -eq "0" ]; then
-	${ECHO} "ERROR: PCI pass-through is not available for bhyve."
+	log error "PCI pass-through is not available for bhyve"
 	exit 127
     fi
 }
@@ -123,14 +203,16 @@ check_configuration() {
     local _file="$1"
 
     if [ ! -f "${_file}" ]; then
-	${ECHO} "ERROR: ${_file} is missing, please create it from the sample."
+	log error "${_file} is missing, please create it from the sample"
 	exit 3
     fi
 }
 
 get_tap_interface() {
     if (${IFCONFIG} | ${GREP} -Fq "${WIFIBOX_IF}: "); then
-	${IFCONFIG} "${WIFIBOX_IF}" | ${GREP} -F member | ${SED} -E 's/^.*member:.*(tap[^ ]*).*$/\1/'
+	${IFCONFIG} "${WIFIBOX_IF}" \
+	    | ${GREP} -F member \
+	    | ${SED} -E 's/^.*member:.*(tap[^ ]*).*$/\1/'
     else
 	${ECHO} ""
     fi
@@ -139,19 +221,26 @@ get_tap_interface() {
 create_bridge() {
     local _tap
 
-    ${IFCONFIG} bridge create name ${WIFIBOX_IF} up > /dev/null
+    log info "Creating bridge interface: ${WIFIBOX_IF}"
+    ${IFCONFIG} bridge create name ${WIFIBOX_IF} up 2>&1 | capture_output debug ifconfig
     _tap="$(${IFCONFIG} tap create up)"
-    ${IFCONFIG} ${WIFIBOX_IF} addm "${_tap}" > /dev/null
+
+    log info "Linking tap interface to ${WIFIBOX_IF}: ${_tap}"
+    ${IFCONFIG} ${WIFIBOX_IF} addm "${_tap}" 2>&1 | capture_output debug ifconfig
 }
 
 destroy_bridge() {
     local _tap
 
     _tap="$(get_tap_interface)"
-    ${IFCONFIG} ${WIFIBOX_IF} destroy > /dev/null
+    log info "Destroying bridge interface: ${WIFIBOX_IF}"
+    ${IFCONFIG} ${WIFIBOX_IF} destroy 2>&1 | capture_output debug ifconfig
 
     if [ -n "${_tap}" ]; then
-	${IFCONFIG} "${_tap}" destroy > /dev/null
+	log info "Destroying linked tap interface: ${_tap}"
+	${IFCONFIG} "${_tap}" destroy 2>&1 | capture_output debug ifconfig
+    else
+	log warn "No linked tap inteface found for ${WIFIBOX_IF}"
     fi
 }
 
@@ -163,15 +252,30 @@ create_nmdm() {
 
     [ "${console}" != "yes" ] && return 0
 
+    log info "Bringing up null-modem devices for console connection"
     assert_kmod_loaded "nmdm"
 
-    [ ! -c ${NMDM_A} ] && ${MKNOD} ${NMDM_A}
-    [ ! -c ${NMDM_B} ] && ${MKNOD} ${NMDM_B}
+    [ ! -c ${NMDM_A} ] && ${MKNOD} ${NMDM_A} 2>&1 | capture_output debug mknod
+    [ ! -c ${NMDM_B} ] && ${MKNOD} ${NMDM_B} 2>&1 | capture_output debug mknod
+
+    [ ! -c ${NMDM_A} ] && log warn "${NMDM_A} is not available"
+    [ ! -c ${NMDM_B} ] && log warn "${NMDM_B} is not available"
+
+    [ -c ${NMDM_A} ] && [ -c ${NMDM_B} ] \
+	&& log info "Null-modem devices are available"
 }
 
 destroy_nmdm() {
-    [ -c ${NMDM_A} ] && ${RM} ${NMDM_A}
-    [ -c ${NMDM_B} ] && ${RM} ${NMDM_B}
+    log info "Removing null-modem devices"
+
+    [ -c ${NMDM_A} ] && ${RM} ${NMDM_A} 2>&1 | capture_output debug rm
+    [ -c ${NMDM_B} ] && ${RM} ${NMDM_B} 2>&1 | capture_output debug rm
+
+    [ -c ${NMDM_A} ] && log warn "${NMDM_A} could not be removed"
+    [ -c ${NMDM_B} ] && log warn "${NMDM_B} could not be removed"
+
+    [ ! -c ${NMDM_A} ] && [ ! -c ${NMDM_B} ] \
+	&& log info "Null-modem devices are removed"
 }
 
 get_ppt_device() {
@@ -196,12 +300,20 @@ get_vm_pid() {
 }
 
 destroy_vm() {
-    ${BHYVECTL} --destroy --vm=${WIFIBOX_VM} >> ${BHYVE_LOG} 2>&1
+    log info "Destroying guest ${WIFIBOX_VM}"
+
+    ${BHYVECTL} --destroy --vm=${WIFIBOX_VM} 2>&1 | capture_output info bhyvectl
     ${SLEEP} 1 > /dev/null
 
     _ppt="$(get_ppt_device)"
+
     if [ -n "${_ppt}" ]; then
-	${DEVCTL} clear driver -f "${_ppt}" > /dev/null
+	log info "Destroying bhyve PPT device: ${_ppt}"
+	if ! ${DEVCTL} clear driver -f "${_ppt}" 2>&1 | capture_output debug devctl; then
+	    log warn "The PPT device could not be destroyed"
+	fi
+    else
+	log warn "No bhyve PPT device could be found"
     fi
 }
 
@@ -213,7 +325,11 @@ vm_start() {
     local _tap_bhyve
     local _ppt
     local _tap
+    local _grub_bhyve_args
+    local _bhyve_args
+    local _pid
 
+    log info "Gathering necessary configuration files for launching the guest"
     check_configuration "${CONFDIR}/bhyve.conf"
     check_configuration "${CONFDIR}/interfaces.conf"
     check_configuration "${CONFDIR}/udhcpd.conf"
@@ -224,70 +340,114 @@ vm_start() {
     passthru=
     console=no
 
+    log info "Pulling bhyve options from configuration file"
     # shellcheck source=./etc/bhyve.conf.sample
     . "${CONFDIR}/bhyve.conf"
+    log debug "cpus=${cpus}, memory=${memory}, passthru=${passthru}, console=${console}"
 
     if [ "${console}" = "yes" ]; then
 	_nmdm_grub_bhyve="-c ${NMDM_A}"
 	_nmdm_bhyve="-l com1,${NMDM_A}"
+	log info "Guest console is configured to use"
+    else
+	log info "Guest console is not configured to use"
     fi
 
     if [ -n "${passthru}" ]; then
 	_passthru_bhyve="-s 6:0,passthru,${passthru}"
+	log info "Passthru device is configured: ${passthru}"
+    else
+	log warn "No passthru device is configured"
     fi
 
     _ppt="$(get_ppt_device)"
     if [ -n "${_ppt}" ]; then
-	${DEVCTL} set driver -f "${_ppt}" ppt > /dev/null
+	${DEVCTL} set driver -f "${_ppt}" ppt 2>&1 | capture_output debug devctl
+	log info "PPT driver is configured for ${_ppt} device"
+    else
+	log warn "No PPT driver is attached due to lack of device"
     fi
 
     _tap="$(get_tap_interface)"
     if [ -n "${_tap}" ]; then
 	_tap_bhyve="-s 5:0,e1000,${_tap}"
+	log info "tap interface is configured: ${_tap}"
     else
-	${ECHO} "ERROR: No tap(4) interface is available."
+	log error "No tap interface is available, cannot proceed"
 	exit 5
     fi
 
-    ${GRUB_BHYVE} -S -M "${memory}" -r host \
-		  ${_nmdm_grub_bhyve} \
-		  -m ${PREFIX}/share/wifibox/device.map \
-		  -d ${PREFIX}/share/wifibox \
-		  ${WIFIBOX_VM} > ${GRUB_BHYVE_LOG} 2>&1
-    ${BHYVE} -c "${cpus}" -m "${memory}" -AHP -u -S \
-	     ${_nmdm_bhyve} \
-	     -s 0,hostbridge \
-	     -s 31,lpc \
-	     -s 4:0,virtio-blk,${DISK_IMAGE} \
-	     -s 4:1,virtio-9p,config=${CONFDIR},ro \
-	     -s 4:2,virtio-9p,var=${RUNDIR}/appliance \
-	     ${_tap_bhyve} \
-	     ${_passthru_bhyve} \
-	     ${WIFIBOX_VM} > ${BHYVE_LOG} 2>&1 &
-    # Give some time for bhyve to launch.
-    ${SLEEP} 1 > /dev/null
+    log info "Lauching guest ${WIFIBOX_VM} with grub-bhyve"
 
-    if [ -z "$(get_vm_pid)" ]; then
+    _grub_bhyve_args=""
+    _grub_bhyve_args="${_grub_bhyve_args} -S -M ${memory}"
+    _grub_bhyve_args="${_grub_bhyve_args} -r host ${_nmdm_grub_bhyve}"
+    _grub_bhyve_args="${_grub_bhyve_args} -m ${PREFIX}/share/wifibox/device.map"
+    _grub_bhyve_args="${_grub_bhyve_args} -d ${PREFIX}/share/wifibox ${WIFIBOX_VM}"
+
+    log debug "Arguments: ${_grub_bhyve_args}"
+    ${GRUB_BHYVE} ${_grub_bhyve_args} 2>&1 | capture_output debug grub-bhyve
+
+    log info "Launching guest ${WIFIBOX_VM} with bhyve"
+
+    _bhyve_args=""
+    _bhyve_args="${_bhyve_args} -c ${cpus}"
+    _bhyve_args="${_bhyve_args} -m ${memory} -AHP -u -S"
+    _bhyve_args="${_bhyve_args} ${_nmdm_bhyve}"
+    _bhyve_args="${_bhyve_args} -s 0,hostbridge"
+    _bhyve_args="${_bhyve_args} -s 31,lpc"
+    _bhyve_args="${_bhyve_args} -s 4:0,virtio-blk,${DISK_IMAGE}"
+    _bhyve_args="${_bhyve_args} -s 4:1,virtio-9p,config=${CONFDIR},ro"
+    _bhyve_args="${_bhyve_args} -s 4:2,virtio-9p,var=${RUNDIR}/appliance"
+    _bhyve_args="${_bhyve_args} ${_tap_bhyve}"
+    _bhyve_args="${_bhyve_args} ${_passthru_bhyve}"
+    _bhyve_args="${_bhyve_args} ${WIFIBOX_VM}"
+
+    log debug "Arguments: ${_bhyve_args}"
+    ${BHYVE} ${_bhyve_args} 2>&1 | capture_output debug bhyve &
+    log info "Waiting for bhyve to start up"
+    ${SLEEP} 1 2>&1 | capture_output debug sleep
+    _pid="$(get_vm_pid)"
+    log debug "Guest is backed by PID ${_pid}"
+
+    if [ -z "${_pid}" ]; then
 	destroy_vm
 	destroy_nmdm
 	destroy_bridge
-	${ECHO} "ERROR: Guest could not be started, check the contents of ${BHYVE_LOG}."
+	log error "Guest could not be started"
 	exit 4
+    else
+	log info "Guest ${WIFIBOX_VM} has started up"
     fi
 }
 
 vm_stop() {
     local _ppt
+    local _pid
 
-    ${KILL} -SIGTERM "$(get_vm_pid)" > /dev/null
-    ${SLEEP} 3 > /dev/null
-    ${BHYVECTL} --force-poweroff --vm=${WIFIBOX_VM} >> ${BHYVE_LOG} 2>&1
+    _pid="$(get_vm_pid)"
+    log info "Stopping guest ${WIFIBOX_VM}, backed by PID ${_pid}"
+
+    if ! ${KILL} -SIGTERM "${_pid}" > /dev/null; then
+	log warn "Guest could not be stopped gracefully"
+    fi
+
+    log info "Waiting 3 seconds for the guest to stop"
+    ${SLEEP} 3 2>&1 | capture_output debug sleep
+
+    log info "Forcing shutdown of guest ${WIFIBOX_VM}"
+    ${BHYVECTL} --force-poweroff --vm=${WIFIBOX_VM} 2>&1 | capture_output debug bhyvectl
     destroy_vm
 }
 
 assert_vm_runs() {
-    if [ -z "$(get_vm_pid)" ]; then
-	${ECHO} "wifibox is not running."
+    local _pid
+
+    _pid="$(get_vm_pid)"
+    log debug "assert guest runs: pid=${_pid}"
+
+    if [ -z "${_pid}" ]; then
+	log error "wifibox is not running"
 	exit 1
     fi
 }
@@ -299,11 +459,12 @@ show_progress() {
 wifibox_start() {
     local _pid
 
+    log info "Begin: wifibox start"
     assert_vm_can_run
-
     _pid="$(get_vm_pid)"
+
     if [ -n "${_pid}" ]; then
-	${ECHO} "wifibox is already running as PID ${_pid}."
+	log error "wifibox is already running as PID ${_pid}"
 	exit 1
     fi
 
@@ -319,11 +480,13 @@ wifibox_start() {
     show_progress
 
     # Give some more time for the guest to boot up.
-    ${SLEEP} 2 > /dev/null
+    ${SLEEP} 2 2>&1 | capture_output debug sleep
     ${ECHO} "OK"
+    log info "End: wifibox start"
 }
 
 wifibox_stop() {
+    log info "Begin: wifibox stop"
     assert_vm_runs
 
     ${PRINTF} "Stopping wifibox"
@@ -338,19 +501,25 @@ wifibox_stop() {
     show_progress
 
     ${ECHO} "OK"
+    log info "End: wifibox stop"
 }
 
 # This is a workaround to recover from the unfortunate state of the
 # wireless device after resume.
 kick_vmm() {
+    log debug "Unloading vmm.ko"
+
     if ! ${KLDUNLOAD} vmm; then
-	${ECHO} "ERROR: Some other bhyve guests might be running, vmm.ko could not be unloaded."
+	log error "Some other bhyve guests might be running, vmm.ko could not be unloaded"
 	exit 127
     fi
+
+    log debug "Reloading vmm.ko"
     ${KLDLOAD} "${VMM_KO}"
 }
 
 wifibox_resume() {
+    log info "Begin: wifibox resume"
     assert_vm_runs
 
     ${PRINTF} "Resuming wifibox"
@@ -363,46 +532,67 @@ wifibox_resume() {
     show_progress
 
     vm_start
+
     ${ECHO} "OK"
+    log info "End: wifibox resume"
 }
 
 wifibox_restart() {
+    log info "Begin: wifibox restart"
     wifibox_stop
     wifibox_start
+    log info "End: wifibox restart"
 }
 
 wifibox_status() {
     local _pid
 
+    log info "Begin: wifibox status"
     _pid="$(get_vm_pid)"
+
     if [ -n "${_pid}" ]; then
-	${ECHO} "wifibox is running as PID ${_pid}."
+	output "wifibox is running as PID ${_pid}"
     else
-	${ECHO} "wifibox is not running."
+	log error "wifibox is not running"
 	return 1
     fi
+
+    log info "End: wifibox status"
 }
 
 wifibox_console() {
+    log info "Begin: wifibox console"
     assert_vm_runs
 
     if [ ! -c ${NMDM_B} ]; then
-	${ECHO} "ERROR: No null-modem device is configured."
+	log error "No null-modem device is configured"
 	exit 127
     fi
 
     ${ECHO} 'Connecting, type "~." to leave the session...'
+    log info "Attaching to the guest"
     ${CU} -s 115200 -l ${NMDM_B}
+    log info "Detached from the guest"
     ${ECHO} "Finished."
+    log info "End: wifibox console"
 }
 
 wifibox_version() {
+    local _checksum
+
+    log info "Begin: wifibox version"
+    _checksum="$(get_image_checksum)"
+
+    log debug "version=${VERSION}, checksum=${_checksum}"
     ${ECHO} "wifibox version ${VERSION}"
-    ${ECHO} "Disk image checksum: $(get_image_checksum)"
+    ${ECHO} "Disk image checksum: ${_checksum}"
+    log info "End: wifibox version"
 }
 
 # Do not execute the main program when sourced.
 [ "$0" != "${SCRIPT}" ] && return 0
+
+log debug "Program started as $0"
 
 case "$1" in
     start) wifibox_start;;

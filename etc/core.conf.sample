@@ -1,0 +1,4 @@
+# These are the default values that control the overall behavior of
+# wifibox.
+
+#loglevel=warn  # level of logging: none < error < warn < info < debug
