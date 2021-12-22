@@ -139,7 +139,7 @@ assert_kmod_loaded() {
     if ! ${KLDSTAT} -q -m "${_kmod}"; then
 	log debug "Kernel module ${_kmod} is not loaded"
 
-	if ! ${KLDLOAD} "${_kmod_file}"; then
+	if ! (${KLDLOAD} "${_kmod_file}" 2>&1 | capture_output debug kldload); then
 	    log error "${_kmod_file} kernel module could not be loaded"
 	    exit 127
 	fi
@@ -303,7 +303,7 @@ destroy_vm() {
     log info "Destroying guest ${WIFIBOX_VM}"
 
     ${BHYVECTL} --destroy --vm=${WIFIBOX_VM} 2>&1 | capture_output info bhyvectl
-    ${SLEEP} 1 > /dev/null
+    ${SLEEP} 1 2>&1 | capture_output debug sleep
 
     _ppt="$(get_ppt_device)"
 
@@ -428,7 +428,7 @@ vm_stop() {
     _pid="$(get_vm_pid)"
     log info "Stopping guest ${WIFIBOX_VM}, backed by PID ${_pid}"
 
-    if ! ${KILL} -SIGTERM "${_pid}" > /dev/null; then
+    if ! (${KILL} -SIGTERM "${_pid}" 2>&1 | capture_output debug kill); then
 	log warn "Guest could not be stopped gracefully"
     fi
 
@@ -509,13 +509,13 @@ wifibox_stop() {
 kick_vmm() {
     log debug "Unloading vmm.ko"
 
-    if ! ${KLDUNLOAD} vmm; then
+    if ! (${KLDUNLOAD} vmm 2>&1 | capture_output debug kldunload); then
 	log error "Some other bhyve guests might be running, vmm.ko could not be unloaded"
 	exit 127
     fi
 
     log debug "Reloading vmm.ko"
-    ${KLDLOAD} "${VMM_KO}"
+    ${KLDLOAD} "${VMM_KO}" 2>&1 | capture_output debug kldload
 }
 
 wifibox_resume() {
