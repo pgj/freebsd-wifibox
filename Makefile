@@ -6,7 +6,6 @@ RCDIR=$(ETCDIR)/rc.d
 SHAREDIR=$(DESTDIR)$(PREFIX)/share
 MANDIR=$(DESTDIR)$(PREFIX)/man
 RUNDIR=$(DESTDIR)/var/run/wifibox
-LOGDIR=$(DESTDIR)/var/log/wifibox
 IMGXZ?=disk.img.xz
 
 MKDIR=/bin/mkdir
@@ -78,7 +77,6 @@ install:
 
 	$(SED) ${_SUB_LIST_EXP} man/wifibox.8 | $(GZIP) -c > $(MANDIR)/man8/wifibox.8.gz
 
-	$(MKDIR) -p $(LOGDIR)
 	$(MKDIR) -p $(RUNDIR)
 	$(MKDIR) -p $(APPLIANCE_DIRS)
 
