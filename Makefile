@@ -13,6 +13,7 @@ SED=/usr/bin/sed
 XZ=/usr/bin/xz
 CP=/bin/cp
 CHMOD=/bin/chmod
+CHOWN=/usr/sbin/chown
 GZIP=/usr/bin/gzip
 GIT=$(LOCALBASE)/bin/git
 
@@ -79,6 +80,7 @@ install:
 
 	$(MKDIR) -p $(RUNDIR)
 	$(MKDIR) -p $(APPLIANCE_DIRS)
+	$(CHOWN) 100:101 $(APPLIANCE_DIR)/lib/chrony $(APPLIANCE_DIR)/log/chrony
 
 .MAIN: clean
 
