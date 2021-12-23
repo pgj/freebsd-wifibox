@@ -33,6 +33,10 @@ BHYVECTL=	/usr/sbin/bhyvectl
 VMM_KO=		vmm.ko
 .endif
 
+.if defined(IMGMAN)
+IMGMAN_NAME!=	basename $(IMGMAN)
+.endif
+
 SUB_LIST=	PREFIX=$(PREFIX) \
 		LOCALBASE=$(LOCALBASE) \
 		VERSION=$(VERSION) \
@@ -77,6 +81,9 @@ install:
 	$(CHMOD) 555 $(RCDIR)/wifibox
 
 	$(SED) ${_SUB_LIST_EXP} man/wifibox.8 | $(GZIP) -c > $(MANDIR)/man8/wifibox.8.gz
+.if defined(IMGMAN)
+	$(SED) ${_SUB_LIST_EXP} $(IMGMAN) | $(GZIP) -c > $(MANDIR)/man5/$(IMGMAN_NAME).gz
+.endif
 
 	$(MKDIR) -p $(RUNDIR)
 	$(MKDIR) -p $(APPLIANCE_DIRS)

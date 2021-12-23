@@ -71,6 +71,7 @@ mostly recommended for development and testing.
     PREFIX=<prefix> \
     LOCALBASE=<prefix of the grub2-bhyve package> \
     IMGXZ=<disk image location> \
+    IMGMAN=<disk image manual page> \
     BHYVE=<bhyve binary location> \
     BHYVECTL=<bhyvectl binary location> \
     VMM_KO=<vmm kernel module location>
@@ -90,6 +91,10 @@ repository, under the
 Grab one of those files (ideally, the latest), and either place it in
 working directory as `disk.img.xz` or set the value of `IMGXZ` to the
 location of the downloaded file on the file system.
+
+Virtual machine images may come with their own documentation, whose
+additional installation can be requested by optionally setting the
+value of the `IMGMAN` variable.
 
 The `BHYVE`, `BHYVECTL`, and `VMM_KO` variables give the location of
 the `bhyve`, `bhyvectl` binaries, and the `vmm.ko` kernel module
