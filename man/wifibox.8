@@ -1,4 +1,4 @@
-.Dd December 21, 2021
+.Dd December 23, 2021
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -176,7 +176,9 @@ or remove packages.  This has to be configured specifically in order
 to work.  The actual way of logging into the system as an
 administrator depends on the VM image in use.  Most of the time the
 .Sy root
-user with a blank password works.
+user with a blank password works.  See
+.Xr wifibox-guest 5
+for more information.
 .It Cm version
 Display version of
 .Nm
@@ -211,7 +213,8 @@ The exit status is 0 on success, and >0 if any of the commands fail.
 .Xr devd.conf 5 ,
 .Xr devd 8 ,
 .Xr cu 1 ,
-.Xr nmdm 4
+.Xr nmdm 4 ,
+.Xr wifibox-guest 5
 .Sh CAVEATS
 .Nm
 supports only a single wireless network device at a time, and it has

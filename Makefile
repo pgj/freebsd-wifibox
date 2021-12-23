@@ -9,6 +9,7 @@ RUNDIR=$(DESTDIR)/var/run/wifibox
 IMGXZ?=disk.img.xz
 
 MKDIR=/bin/mkdir
+LN=/bin/ln
 SED=/usr/bin/sed
 XZ=/usr/bin/xz
 CP=/bin/cp
@@ -34,7 +35,10 @@ VMM_KO=		vmm.ko
 .endif
 
 .if defined(IMGMAN)
-IMGMAN_NAME!=	basename $(IMGMAN)
+_IMGMAN_NAME!=	basename $(IMGMAN)
+_GUEST_MAN=	$(MANDIR)/man5/${_IMGMAN_NAME}.gz
+.else
+_GUEST_MAN=	$(MANDIR)/man8/wifibox.8.gz
 .endif
 
 SUB_LIST=	PREFIX=$(PREFIX) \
@@ -82,8 +86,9 @@ install:
 
 	$(SED) ${_SUB_LIST_EXP} man/wifibox.8 | $(GZIP) -c > $(MANDIR)/man8/wifibox.8.gz
 .if defined(IMGMAN)
-	$(SED) ${_SUB_LIST_EXP} $(IMGMAN) | $(GZIP) -c > $(MANDIR)/man5/$(IMGMAN_NAME).gz
+	$(SED) ${_SUB_LIST_EXP} $(IMGMAN) | $(GZIP) -c > $(MANDIR)/man5/${_IMGMAN_NAME}.gz
 .endif
+	$(LN) -s ${_GUEST_MAN} $(MANDIR)/man5/wifibox-guest.5.gz
 
 	$(MKDIR) -p $(RUNDIR)
 	$(MKDIR) -p $(APPLIANCE_DIRS)
