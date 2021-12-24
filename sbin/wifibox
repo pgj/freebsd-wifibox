@@ -378,6 +378,7 @@ vm_start() {
     _tap="$(get_tap_interface)"
     if [ -n "${_tap}" ]; then
 	_tap_bhyve="-s 5:0,e1000,${_tap}"
+	${IFCONFIG} "${_tap}" up 2>&1 | capture_output debug ifconfig
 	log info "tap interface is configured: ${_tap}"
     else
 	log error "No tap interface is available, cannot proceed"
