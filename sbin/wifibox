@@ -87,7 +87,7 @@ log() {
 
     if [ -w ${WIFIBOX_LOG} ]; then
 	${ECHO} "${_timestamp} ${_level} ${_message}" >> ${WIFIBOX_LOG}
-    elif [ -z ${WARNED_ABOUT_LOG} ]; then
+    elif [ -z "${WARNED_ABOUT_LOG}" ]; then
 	${ECHO} "WARNING: ${WIFIBOX_LOG} is not writeable, messages could not be logged."
 	WARNED_ABOUT_LOG=yes
     fi
