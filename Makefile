@@ -36,9 +36,9 @@ VMM_KO=		vmm.ko
 
 .if defined(IMGMAN)
 _IMGMAN_NAME!=	basename $(IMGMAN)
-_GUEST_MAN=	$(MANDIR)/man5/${_IMGMAN_NAME}.gz
+_GUEST_MAN=	${_IMGMAN_NAME}.gz
 .else
-_GUEST_MAN=	$(MANDIR)/man8/wifibox.8.gz
+_GUEST_MAN=	../man8/wifibox.8.gz
 .endif
 
 SUB_LIST=	PREFIX=$(PREFIX) \
