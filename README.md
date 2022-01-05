@@ -123,6 +123,7 @@ configurations:
 | Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 11.4-RELEASE, 12.3-RELEASE, 13.0-RELEASE, 14-CURRENT (snapshot `20211223-fa255ab1b89-251899`) |
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
+| Intel Core i7-8565U | Qualcomm Atheros QCA6174 | Dell XPS 9380 | 13-STABLE |
 
 Feel free to submit a pull request or write an email to have your
 configuration added here!
