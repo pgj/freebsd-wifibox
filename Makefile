@@ -17,6 +17,9 @@ CHMOD=/bin/chmod
 CHOWN=/usr/sbin/chown
 GZIP=/usr/bin/gzip
 GIT=$(LOCALBASE)/bin/git
+ID=/usr/bin/id
+
+UID!=		$(ID) -u
 
 .if !defined(VERSION)
 VERSION!=	$(GIT) describe --tags
@@ -92,7 +95,10 @@ install:
 
 	$(MKDIR) -p $(RUNDIR)
 	$(MKDIR) -p $(APPLIANCE_DIRS)
+
+.if $(UID) == 0
 	$(CHOWN) 100:101 $(APPLIANCE_DIR)/lib/chrony $(APPLIANCE_DIR)/log/chrony
+.endif
 
 .MAIN: clean
 
