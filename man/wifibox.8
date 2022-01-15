@@ -1,4 +1,4 @@
-.Dd December 23, 2021
+.Dd January 15, 2022
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -82,14 +82,23 @@ After
 started successfully, the IP address for the corresponding networking
 interface needs to be configured in
 .Xr rc.conf 5 .
-For example, assignment of a dynamic IP address can requested by
+For example, assignment of a dynamic IP address can be requested by
 adding this line below.
 .Bd -literal -offset indent
 ifconfig_wifibox0="SYNCDHCP"
 .Ed
 .Pp
+In addition to this, to reduce boot times,
+.Xr dhclient 8
+can be instructed to run in the background and not to wait for a
+positive link and issuing an IP address after it has been launched.
+.Bd -literal -offset indent
+background_dhclient_wifibox0="YES"
+defaultroute_delay="0"
+.Ed
+.Pp
 If preferred, static IP address configuration is possible with this
-method, which can be faster.  Assume that
+method.  Assume that
 .Sy wifibox0
 is configured as 10.0.0.1/24 on the guest's side, and the host wants
 to use the 10.0.0.2/24 IP address.
@@ -109,9 +118,25 @@ service.
 .Pp
 For static IP address configurations, the
 .Nm routing
-service has to be restart as well.
+service has to be restarted as well.
 .Bd -literal -offset indent
 # service routing restart
+.Ed
+.Pp
+Note that since
+.Sy wifibox0
+becomes managed by
+.Nm netif
+this way,
+.Nm
+has to be restarted every time when the networking interfaces are
+recreated by
+.Nm netif ,
+otherwise the link will stop working.
+.Bd -literal -offset indent
+# service netif stop
+# service wifibox restart
+# service netif start
 .Ed
 .Pp
 If the
