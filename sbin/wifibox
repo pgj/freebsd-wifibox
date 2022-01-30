@@ -468,6 +468,8 @@ wifibox_start() {
     local _pid
 
     log info "Begin: wifibox start"
+
+    ${PRINTF} "Launching wifibox..."
     assert_vm_can_run
     _pid="$(get_vm_pid)"
 
@@ -475,8 +477,6 @@ wifibox_start() {
 	log error "wifibox is already running as PID ${_pid}"
 	exit 1
     fi
-
-    ${PRINTF} "Launching wifibox"
 
     create_bridge
     show_progress
@@ -487,17 +487,15 @@ wifibox_start() {
     vm_start
     show_progress
 
-    # Give some more time for the guest to boot up.
-    ${SLEEP} 2 2>&1 | capture_output debug sleep
     ${ECHO} "OK"
     log info "End: wifibox start"
 }
 
 wifibox_stop() {
     log info "Begin: wifibox stop"
-    assert_vm_runs
 
-    ${PRINTF} "Stopping wifibox"
+    ${PRINTF} "Stopping wifibox..."
+    assert_vm_runs
 
     vm_stop
     show_progress
@@ -514,41 +512,85 @@ wifibox_stop() {
 
 # This is a workaround to recover from the unfortunate state of the
 # wireless device after resume.
-kick_vmm() {
-    log debug "Unloading vmm.ko"
+reload_vmm() {
+    log info "Unloading vmm.ko"
 
     if ! (${KLDUNLOAD} vmm 2>&1 | capture_output debug kldunload); then
 	log error "Some other bhyve guests might be running, vmm.ko could not be unloaded"
 	exit 127
     fi
 
-    log debug "Reloading vmm.ko"
+    log info "Reloading vmm.ko"
     ${KLDLOAD} "${VMM_KO}" 2>&1 | capture_output debug kldload
 }
 
-wifibox_resume() {
-    log info "Begin: wifibox resume"
-    assert_vm_runs
+has_flag() {
+    local _flags="$1"
+    local _flag="$2"
 
-    ${PRINTF} "Resuming wifibox"
-
-    vm_stop
-    show_progress
-
-    ${SLEEP} 1
-    kick_vmm
-    show_progress
-
-    vm_start
-
-    ${ECHO} "OK"
-    log info "End: wifibox resume"
+    ${ECHO} "${_flags}" | ${GREP} -Fq "${_flag}"
 }
 
 wifibox_restart() {
+    local _target="$1"
+    local _restart
+
     log info "Begin: wifibox restart"
-    wifibox_stop
-    wifibox_start
+
+    if [ -n "$2" ]; then
+	log error "Too many parameters"
+	exit 1
+    fi
+
+    case ${_target} in
+	guest) _restart="G";;
+	""|netif) _restart="GN";;
+	console) _restart="GM";;
+	vmm) _restart="GV";;
+	*) log error "Unknown target: ${_target}"
+	   exit 1;;
+    esac
+
+    log debug "restart=${_restart}"
+    ${PRINTF} "Restarting wifibox..."
+
+    if has_flag "${_restart}" "G"; then
+	assert_vm_runs
+	vm_stop
+	show_progress
+    fi
+
+    if has_flag "${_restart}" "M"; then
+	destroy_nmdm
+	show_progress
+    fi
+
+    if has_flag "${_restart}" "N"; then
+	destroy_bridge
+	show_progress
+    fi
+
+    if has_flag "${_restart}" "V"; then
+	reload_vmm
+	show_progress
+    fi
+
+    if has_flag "${_restart}" "N"; then
+	create_bridge
+	show_progress
+    fi
+
+    if has_flag "${_restart}" "M"; then
+	create_nmdm
+	show_progress
+    fi
+
+    if has_flag "${_restart}" "G"; then
+	vm_start
+	show_progress
+    fi
+
+    ${ECHO} "OK"
     log info "End: wifibox restart"
 }
 
@@ -597,18 +639,32 @@ wifibox_version() {
     log info "End: wifibox version"
 }
 
+wifibox_usage() {
+    ${CAT} <<EOF
+USAGE: ${SCRIPT} ...
+    start
+    stop
+    restart [guest|netif|console|vmm]
+    status
+    console
+    version
+EOF
+    exit 1
+}
+
 # Do not execute the main program when sourced.
 [ "$0" != "${SCRIPT}" ] && return 0
 
-log debug "Program started as $0"
+log debug "Program started as $0, with arguments: $@"
+command="$1"
+shift
 
-case "$1" in
+case ${command} in
     start) wifibox_start;;
     stop) wifibox_stop;;
-    resume) wifibox_resume;;
-    restart) wifibox_restart;;
+    restart) wifibox_restart "$@";;
     status) wifibox_status;;
     console) wifibox_console;;
     version) wifibox_version;;
-    *) ${ECHO} "USAGE: ${SCRIPT} start | stop | restart | resume | status | console | version" ;;
+    *) wifibox_usage;;
 esac

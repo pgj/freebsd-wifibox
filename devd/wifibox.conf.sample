@@ -6,5 +6,5 @@
 notify 11 {
         match "system"          "ACPI";
         match "subsystem"       "Resume";
-        action "/etc/rc.resume acpi $notify && %%PREFIX%%/sbin/wifibox resume";
+        action "/etc/rc.resume acpi $notify && %%PREFIX%%/sbin/wifibox restart vmm";
 };
