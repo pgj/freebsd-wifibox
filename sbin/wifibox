@@ -5,6 +5,8 @@ set -o pipefail
 PREFIX=%%PREFIX%%
 LOCALBASE=%%LOCALBASE%%
 VERSION=%%VERSION%%
+GUEST_ROOT=%%GUEST_ROOT%%
+
 SCRIPT=${PREFIX}/sbin/wifibox
 LOGDIR=/var/log
 RUNDIR=/var/run/wifibox
@@ -41,8 +43,6 @@ WIFIBOX_LOG=${LOGDIR}/wifibox.log
 
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
 : "${SOCAT:=${LOCALBASE}/bin/socat}"
-
-DISK_IMAGE="${PREFIX}/share/wifibox/disk.img"
 
 NMDM_DEVICE=/dev/nmdm-wifibox
 NMDM_A="${NMDM_DEVICE}.1A"
@@ -204,10 +204,6 @@ assert_vm_can_run() {
     assert_vmm_loaded
     check_iommu
     check_virtfs
-}
-
-get_image_checksum() {
-    ${SHA256} -q "${DISK_IMAGE}"
 }
 
 check_configuration() {
@@ -452,8 +448,6 @@ vm_start() {
 
     log info "Gathering necessary configuration files for launching the guest"
     check_configuration "${CONFDIR}/bhyve.conf"
-    check_configuration "${CONFDIR}/interfaces.conf"
-    check_configuration "${CONFDIR}/udhcpd.conf"
     check_configuration "${CONFDIR}/wpa_ctrl.conf"
     check_configuration "${WPA_CONFDIR}/wpa_supplicant.conf"
 
@@ -519,7 +513,6 @@ vm_start() {
     _grub_bhyve_args=""
     _grub_bhyve_args="${_grub_bhyve_args} -S -M ${memory}"
     _grub_bhyve_args="${_grub_bhyve_args} -r host ${_nmdm_grub_bhyve}"
-    _grub_bhyve_args="${_grub_bhyve_args} -m ${PREFIX}/share/wifibox/device.map"
     _grub_bhyve_args="${_grub_bhyve_args} -d ${PREFIX}/share/wifibox ${WIFIBOX_VM}"
 
     log debug "Arguments: ${_grub_bhyve_args}"
@@ -533,7 +526,7 @@ vm_start() {
     _bhyve_args="${_bhyve_args} ${_nmdm_bhyve}"
     _bhyve_args="${_bhyve_args} -s 0,hostbridge"
     _bhyve_args="${_bhyve_args} -s 31,lpc"
-    _bhyve_args="${_bhyve_args} -s 4:0,virtio-blk,${DISK_IMAGE}"
+    _bhyve_args="${_bhyve_args} -s 4:0,virtio-9p,root=${GUEST_ROOT},ro"
     _bhyve_args="${_bhyve_args} -s 4:1,virtio-9p,config=${CONFDIR},ro"
     _bhyve_args="${_bhyve_args} -s 4:2,virtio-9p,wpa_config=${WPA_CONFDIR}${_wpa_conf_mode}"
     _bhyve_args="${_bhyve_args} -s 4:3,virtio-9p,var=${RUNDIR}/appliance"
@@ -767,15 +760,34 @@ wifibox_console() {
     log info "End: wifibox console"
 }
 
+# shellcheck disable=SC1090
 wifibox_version() {
-    local _checksum
+    local _guest_info="${GUEST_ROOT}/etc/os-release"
+    local _wifibox_info="${GUEST_ROOT}/etc/wifibox-guest"
 
     log info "Begin: wifibox version"
-    _checksum="$(get_image_checksum)"
-
-    log debug "version=${VERSION}, checksum=${_checksum}"
+    log debug "version=${VERSION}"
     ${ECHO} "wifibox version ${VERSION}"
-    ${ECHO} "Disk image checksum: ${_checksum}"
+
+    if [ -f "${_guest_info}" ]; then
+	(. "${_guest_info}";
+	 log debug "${_guest_info} found and read";
+	 log debug "guest info: ${PRETTY_NAME}, ${ID}";
+	 ${ECHO} -n "Guest: ${PRETTY_NAME} (${ID})")
+
+	if [ -f "${_wifibox_info}" ]; then
+	    (. "${_wifibox_info}";
+	     log debug "${_wifibox_info} found and read";
+	     log debug "wifibox info: ${VERSION}";
+	     ${ECHO} -n ", version: ${VERSION}")
+	fi
+
+	${ECHO} ""
+    else
+	log debug "${_guest_info} could not be found"
+	${ECHO} "No information is available about the guest"
+    fi
+
     log info "End: wifibox version"
 }
 

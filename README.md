@@ -7,9 +7,9 @@ improve the wireless networking experience on FreeBSD, of which
 Wifibox tries to implement as a single easy-to-use software package.
 
 - [bhyve], a lightweight virtualization solution for FreeBSD, is
-  utilized to run [Alpine Linux], a security-oriented, lightweight
-  Linux distribution based on musl libc and busybox.  This helps to
-  achieve low resource footprint.
+  utilized to run the embedded Linux system, using the VirtFS/9p
+  backend to share its root file system with the host for the greatest
+  flexibility.  This helps to achieve low resource footprint.
 
 - Configuration files are shared with the host system.  The guest
   uses `wpa_supplicant(8)` so it is possible to import the host's
@@ -46,7 +46,7 @@ possible:
   Linux versions, but it is not performing well enough under FreeBSD.
 
 - A CPU that is supported by [bhyve] PCI pass-through (I/O MMU) with
-  ~150 MB physical memory and ~370 MB disk space available.
+  ~150 MB physical memory and some disk space available for the guest.
 
 - A supported FreeBSD/amd64 system: 12.3-RELEASE or 13.0-RELEASE.
   14-CURRENT might work.
@@ -83,8 +83,8 @@ mostly recommended for development and testing.
 # make install \
     PREFIX=<prefix> \
     LOCALBASE=<prefix of the grub2-bhyve and socat packages> \
-    IMGXZ=<disk image location> \
-    IMGMAN=<disk image manual page> \
+    GUEST_ROOT=<guest root location> \
+    GUEST_MAN=<guest manual page> \
     BHYVE=<bhyve binary location> \
     BHYVECTL=<bhyvectl binary location> \
     VMM_KO=<vmm kernel module location>
@@ -95,20 +95,14 @@ is possible to set the `LOCALBASE` variable to tell if the prefix
 under which the `grub-bhyve` and `socat` utilities were installed is
 different.
 
-The `IMGXZ` variable should point to the virtual machine image to use,
-which is `disk.img.xz` by default.  Note that this file is not part of
-the repository because it is usually a large binary file.  That is why
-it is released separately from the
-[freebsd-wifibox-image](https://github.com/pgj/freebsd-wifibox-image)
-repository, under the
-[Releases](https://github.com/pgj/freebsd-wifibox-image/releases) tab.
-Grab one of those files (ideally, the latest), and either place it in
-working directory as `disk.img.xz` or set the value of `IMGXZ` to the
-location of the downloaded file on the file system.
+The `GUEST_ROOT` variable should point to the directory that houses
+the files under the guest's root file system, which is
+`$(LOCALBASE)/share/wifibox/guest` by default.  Note that this is not
+part of the repository and should be installed individually.
 
-Virtual machine images may come with their own documentation, whose
-additional installation can be requested by optionally setting the
-value of the `IMGMAN` variable.
+The guests may come with its own documentation, whose additional
+installation can be requested by optionally setting the value of the
+`GUEST_MAN` variable.
 
 The `BHYVE`, `BHYVECTL`, and `VMM_KO` variables give the location of
 the `bhyve`, `bhyvectl` binaries, and the `vmm.ko` kernel module
@@ -145,4 +139,3 @@ configuration added here!
 
 [bhyve]: https://wiki.freebsd.org/bhyve
 [bhyve+]: https://github.com/pgj/freebsd-bhyve-plus-port/
-[Alpine Linux]: https://alpinelinux.org/
