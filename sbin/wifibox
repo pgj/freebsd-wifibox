@@ -655,7 +655,7 @@ EOF
 # Do not execute the main program when sourced.
 [ "$0" != "${SCRIPT}" ] && return 0
 
-log debug "Program started as $0, with arguments: $@"
+log debug "Program started as $0, with arguments: $*"
 command="$1"
 shift
 
