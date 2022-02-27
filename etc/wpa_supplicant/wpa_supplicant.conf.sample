@@ -1,0 +1,17 @@
+# This is a placeholder file.  On how to create one, consult
+# /usr/share/examples/etc/wpa_supplicant.conf or import an existing one
+# from the /etc directory.
+
+# Mind that certain restrictions apply on configuration of control
+# sockets due to the bounds of virtualization.  The `ctrl_interface`
+# parameter sets the location of the sockets which is going to be same
+# for both the host and the guest, but that latter could only create
+# them on /var/run.  Similarly, the `ctrl_interface_group` parameter
+# has to point to a group that exists on both systems by its numerical
+# identifier.
+#
+# Hence the following settings are recommended.
+
+#ctrl_interface=/var/run/wpa_supplicant
+#ctrl_interface_group=0
+#update_config=1

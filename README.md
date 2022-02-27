@@ -52,6 +52,12 @@ possible:
   corresponding `sysutils/grub2-bhyve` FreeBSD package, so the Linux
   guest could be booted via GRUB 2.
 
+- [socat](http://www.dest-unreach.org/socat/) or the respective
+  `net/socat` FreeBSD package, through which control sockets for
+  `wpa_supplicant(8)` could be published on the host.  It facilitates
+  the use of tools like `wpa_cli(8)` or `wpa_gui` from the
+  `net/wpa_supplicant_gui` FreeBSD package.
+
 ## Installation
 
 Use the `net/wifibox` FreeBSD port which is available at the
@@ -69,7 +75,7 @@ mostly recommended for development and testing.
 ```console
 # make install \
     PREFIX=<prefix> \
-    LOCALBASE=<prefix of the grub2-bhyve package> \
+    LOCALBASE=<prefix of the grub2-bhyve and socat packages> \
     IMGXZ=<disk image location> \
     IMGMAN=<disk image manual page> \
     BHYVE=<bhyve binary location> \
@@ -79,7 +85,8 @@ mostly recommended for development and testing.
 
 By default, `PREFIX` is set to `/usr/local`.  In addition to that, it
 is possible to set the `LOCALBASE` variable to tell if the prefix
-under which the `grub-bhyve` utility was installed is different.
+under which the `grub-bhyve` and `socat` utilities were installed is
+different.
 
 The `IMGXZ` variable should point to the virtual machine image to use,
 which is `disk.img.xz` by default.  Note that this file is not part of

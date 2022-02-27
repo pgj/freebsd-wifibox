@@ -1,0 +1,23 @@
+# This file holds the parameters for establishing the socat(1)-based
+# communication link between the host and the guest for forwarding the
+# control sockets of wpa_supplicant(8).  The contents should be in
+# sync with how the guest's internal interface and wpa_supplicant(8)
+# were configured.
+
+# Explicitly tell if forwarding of control sockets is desired.  By
+# default, that is disabled.
+enabled=no
+
+# Guest network coordinates, IP address and netmask as a single value.
+# It is optional to set but less reliable as autodetection may not
+# always work.
+network=10.0.0.1:255.255.255.0
+
+# Control socket mapping.  For each socket, there should be a variable
+# with the "_port" suffix and the hyphens are replaced with
+# underscores in the name.  The values specify the numbers of TCP
+# ports to open over which the host can relay.  Without these
+# settings, no sockets could be created on the host.
+wlan0_port=1200         # default socket, should be present
+p2p_dev_wlan0_port=1201 # not available if p2p_disabled=1 is set in
+			# wpa_supplicant.conf(5)

@@ -9,6 +9,7 @@ SCRIPT=${PREFIX}/sbin/wifibox
 LOGDIR=/var/log
 RUNDIR=/var/run/wifibox
 CONFDIR=${PREFIX}/etc/wifibox
+WPA_CONFDIR=${CONFDIR}/wpa_supplicant
 WIFIBOX_LOG=${LOGDIR}/wifibox.log
 
 : "${BHYVE:=%%BHYVE%%}"
@@ -35,8 +36,11 @@ WIFIBOX_LOG=${LOGDIR}/wifibox.log
 : "${KILL:=/bin/kill}"
 : "${RM:=/bin/rm}"
 : "${CU:=/usr/bin/cu}"
+: "${NETSTAT:=/usr/bin/netstat}"
+: "${STAT:=/usr/bin/stat}"
 
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
+: "${SOCAT:=${LOCALBASE}/bin/socat}"
 
 DISK_IMAGE="${PREFIX}/share/wifibox/disk.img"
 
@@ -285,6 +289,109 @@ destroy_nmdm() {
 	&& log info "Null-modem devices are removed"
 }
 
+get_wpa_supplicant_parameter() {
+    local _parameter="$1"
+
+    check_configuration "${WPA_CONFDIR}/wpa_supplicant.conf"
+    ${GREP} "^${_parameter}=" "${WPA_CONFDIR}/wpa_supplicant.conf" \
+	| ${SED} "s!^${_parameter}=!!"
+}
+
+find_guest_ip() {
+    ${NETSTAT} -r \
+	| ${GREP} "^default.*${WIFIBOX_IF}\$" \
+	| ${HEAD} -1 \
+	| ${SED} -E "s!^default[ ]+([0-9\.]+)[ ]+.*${WIFIBOX_IF}\$!\1!"
+}
+
+wpa_passthru_start() {
+    local enabled
+    local network
+    local _ctrl_interface
+    local _ctrl_interface_group
+    local _wlan_devs
+    local _wlan
+    local _ip
+    local _port
+
+    check_configuration "${CONFDIR}/wpa_ctrl.conf"
+    enabled=no
+
+    # shellcheck source=./etc/wpa_ctrl.conf.sample
+    . "${CONFDIR}/wpa_ctrl.conf"
+
+    [ "${enabled}" = "no" ] && return 0
+
+    log info "Bringing up WPA Supplicant pass-through"
+    _ctrl_interface=$(get_wpa_supplicant_parameter "ctrl_interface")
+    log info "Control interface: ${_ctrl_interface}"
+
+    if [ -z "${_ctrl_interface}" ]; then
+	log warn "No WPA Supplicant control interface found, exiting."
+	return 1
+    fi
+
+    if [ ! -d "${_ctrl_interface}" ]; then
+	log warn "Invalid WPA Supplicant control interface, aborting."
+	return 1
+    fi
+
+    if [ -z "${network}" ]; then
+	_ip=$(find_guest_ip)
+    else
+	_ip=${network%%:*}
+    fi
+
+    log info "Found guest IP address: ${_ip}"
+
+    if [ -z "${_ip}" ]; then
+	log warn "No guest IP address could be discovered, aborting."
+	return 1
+    fi
+
+    _ctrl_interface_group=$(get_wpa_supplicant_parameter "ctrl_interface_group")
+
+    [ -z "${_ctrl_interface_group}" ] \
+	&& _ctrl_interface_group=$(${STAT} -qf "%g" "${_ctrl_interface}")
+
+    [ -z "${_ctrl_interface_group}" ] \
+        && _ctrl_interface_group=0
+
+    log info "Control interface group: ${_ctrl_interface_group}"
+
+    _wlan_devs=$(set | ${GREP} -F "_port=" | ${SED} 's!_port=.*!!')
+    log info "WLAN devices: [${_wlan_devs}]"
+
+    for _wlan_dev in ${_wlan_devs}; do
+	_wlan=$(${ECHO} "${_wlan_dev}" | ${SED} 's!_!-!g')
+	_ctrl_socket="${_ctrl_interface}/${_wlan}"
+	_port=$(eval "echo \${${_wlan_dev}_port}")
+
+	if [ -z "${_port}" ]; then
+	    log warn "No port defined for ${_wlan}, skipping."
+	    continue
+	fi
+
+	log info "Hooking up ${_ip}:${_port} as ${_ctrl_socket}"
+	${SOCAT} \
+	    UNIX-RECVFROM:"${_ctrl_socket}",reuseaddr,fork,unlink-early,user=root,group="${_ctrl_interface_group}",mode=770 \
+	    TCP4:"${_ip}":"${_port}" 2>&1 \
+	    | capture_output debug socat &
+    done
+}
+
+wpa_passthru_stop() {
+    local _socats
+
+    _socats=$(${PGREP} -fx "${SOCAT} UNIX-RECVFROM:.* TCP4:.*")
+    log info "Tearing down WPA supplicant pass-through"
+    log info "socat processes found: [${_socats}]"
+
+    # shellcheck disable=SC2086
+    [ -n "${_socats}" ] \
+	&& ${KILL} -TERM ${_socats}
+}
+
 get_ppt_device() {
     check_configuration "${CONFDIR}/bhyve.conf"
     passthru=
@@ -340,7 +447,8 @@ vm_start() {
     check_configuration "${CONFDIR}/bhyve.conf"
     check_configuration "${CONFDIR}/interfaces.conf"
     check_configuration "${CONFDIR}/udhcpd.conf"
-    check_configuration "${CONFDIR}/wpa_supplicant.conf"
+    check_configuration "${CONFDIR}/wpa_ctrl.conf"
+    check_configuration "${WPA_CONFDIR}/wpa_supplicant.conf"
 
     cpus=1
     memory=86M
@@ -406,7 +514,8 @@ vm_start() {
     _bhyve_args="${_bhyve_args} -s 31,lpc"
     _bhyve_args="${_bhyve_args} -s 4:0,virtio-blk,${DISK_IMAGE}"
     _bhyve_args="${_bhyve_args} -s 4:1,virtio-9p,config=${CONFDIR},ro"
-    _bhyve_args="${_bhyve_args} -s 4:2,virtio-9p,var=${RUNDIR}/appliance"
+    _bhyve_args="${_bhyve_args} -s 4:2,virtio-9p,wpa_config=${WPA_CONFDIR}"
+    _bhyve_args="${_bhyve_args} -s 4:3,virtio-9p,var=${RUNDIR}/appliance"
     _bhyve_args="${_bhyve_args} ${_tap_bhyve}"
     _bhyve_args="${_bhyve_args} ${_passthru_bhyve}"
     _bhyve_args="${_bhyve_args} ${WIFIBOX_VM}"
@@ -487,6 +596,9 @@ wifibox_start() {
     vm_start
     show_progress
 
+    wpa_passthru_start
+    show_progress
+
     ${ECHO} "OK"
     log info "End: wifibox start"
 }
@@ -496,6 +608,9 @@ wifibox_stop() {
 
     ${PRINTF} "Stopping wifibox..."
     assert_vm_runs
+
+    wpa_passthru_stop
+    show_progress
 
     vm_stop
     show_progress
@@ -556,6 +671,8 @@ wifibox_restart() {
 
     if has_flag "${_restart}" "G"; then
 	assert_vm_runs
+	wpa_passthru_stop
+	show_progress
 	vm_stop
 	show_progress
     fi
@@ -587,6 +704,8 @@ wifibox_restart() {
 
     if has_flag "${_restart}" "G"; then
 	vm_start
+	show_progress
+	wpa_passthru_start
 	show_progress
     fi
 

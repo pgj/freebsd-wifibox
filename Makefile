@@ -79,7 +79,7 @@ install:
 	$(XZ) -cd $(IMGXZ) > $(SHAREDIR)/wifibox/disk.img
 
 	$(MKDIR) -p $(ETCDIR)/wifibox
-	$(CP) etc/* $(ETCDIR)/wifibox/
+	$(CP) -R etc/* $(ETCDIR)/wifibox/
 	$(MKDIR) -p $(ETCDIR)/devd
 	$(SED) ${_SUB_LIST_EXP} devd/wifibox.conf.sample > $(ETCDIR)/devd/wifibox.conf.sample
 
