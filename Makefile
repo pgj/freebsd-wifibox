@@ -22,7 +22,7 @@ ID=/usr/bin/id
 UID!=		$(ID) -u
 
 .if !defined(VERSION)
-VERSION!=	$(GIT) describe --tags
+VERSION!=	$(GIT) describe --tags --always
 .endif
 
 .if !defined(BHYVE)
