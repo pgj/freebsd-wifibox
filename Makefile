@@ -95,6 +95,7 @@ install:
 
 	$(MKDIR) -p $(RUNDIR)
 	$(MKDIR) -p $(APPLIANCE_DIRS)
+	$(LN) -s /run $(APPLIANCE_DIR)
 
 .if $(UID) == 0
 	$(CHOWN) 100:101 $(APPLIANCE_DIR)/lib/chrony $(APPLIANCE_DIR)/log/chrony
