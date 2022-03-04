@@ -439,6 +439,8 @@ vm_start() {
     local _tap_bhyve
     local _ppt
     local _tap
+    local _wpa_ctrl_enabled
+    local _wpa_conf_mode
     local _grub_bhyve_args
     local _bhyve_args
     local _pid
@@ -493,6 +495,20 @@ vm_start() {
 	exit 5
     fi
 
+    log info "Pulling WPA Supplicant control options from configuration file"
+    _wpa_ctrl_enabled=$(
+	# shellcheck source=./etc/wpa_ctrl.conf.sample
+	. "${CONFDIR}/wpa_ctrl.conf"; ${ECHO} "${enabled}")
+    log debug "wpa_ctrl.enabled=${_wpa_ctrl_enabled}"
+
+    if [ "${_wpa_ctrl_enabled}" = "no" ]; then
+	_wpa_conf_mode=",ro"
+	log info "wpa_supplicant.conf will be mounted read-only"
+    else
+	_wpa_conf_mode=""
+	log info "wpa_supplicant.conf will be mounted writable"
+    fi
+
     log info "Lauching guest ${WIFIBOX_VM} with grub-bhyve"
 
     _grub_bhyve_args=""
@@ -514,7 +530,7 @@ vm_start() {
     _bhyve_args="${_bhyve_args} -s 31,lpc"
     _bhyve_args="${_bhyve_args} -s 4:0,virtio-blk,${DISK_IMAGE}"
     _bhyve_args="${_bhyve_args} -s 4:1,virtio-9p,config=${CONFDIR},ro"
-    _bhyve_args="${_bhyve_args} -s 4:2,virtio-9p,wpa_config=${WPA_CONFDIR}"
+    _bhyve_args="${_bhyve_args} -s 4:2,virtio-9p,wpa_config=${WPA_CONFDIR}${_wpa_conf_mode}"
     _bhyve_args="${_bhyve_args} -s 4:3,virtio-9p,var=${RUNDIR}/appliance"
     _bhyve_args="${_bhyve_args} ${_tap_bhyve}"
     _bhyve_args="${_bhyve_args} ${_passthru_bhyve}"
