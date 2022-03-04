@@ -343,7 +343,7 @@ vm_start() {
     check_configuration "${CONFDIR}/wpa_supplicant.conf"
 
     cpus=1
-    memory=128M
+    memory=86M
     passthru=
     console=no
 
