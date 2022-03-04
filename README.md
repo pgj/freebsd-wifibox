@@ -39,7 +39,7 @@ possible:
   Linux versions, but it is not performing well enough under FreeBSD.
 
 - A CPU that is supported by [bhyve] PCI pass-through (I/O MMU) with
-  ~256 MB physical memory and ~700 MB disk space available.
+  ~150 MB physical memory and ~370 MB disk space available.
 
 - A supported FreeBSD/amd64 system: 11.4-RELEASE, 12.3-RELEASE, or
   13.0-RELEASE.  14-CURRENT might work.
