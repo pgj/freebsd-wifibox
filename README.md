@@ -41,12 +41,12 @@ possible:
 - A CPU that is supported by [bhyve] PCI pass-through (I/O MMU) with
   ~150 MB physical memory and ~370 MB disk space available.
 
-- A supported FreeBSD/amd64 system: 11.4-RELEASE, 12.3-RELEASE, or
-  13.0-RELEASE.  14-CURRENT might work.
+- A supported FreeBSD/amd64 system: 12.3-RELEASE or 13.0-RELEASE.
+  14-CURRENT might work.
 
 - The [bhyve+] port which installs unofficial patches for `bhyve` to
-  fill gaps present in the base system.  For FreeBSD 11 and 12, this
-  is mandatory, but it may come handy on newer systems as well.
+  fill gaps present in the base system.  For FreeBSD 12, this is
+  mandatory, but it may come handy on newer systems as well.
 
 - [grub2-bhyve](https://github.com/grehan-freebsd/grub2-bhyve) or the
   corresponding `sysutils/grub2-bhyve` FreeBSD package, so the Linux
@@ -129,7 +129,7 @@ configurations:
 
 | CPU | Wireless NIC | Model | FreeBSD |
 | :-- | :----------- | :---- | :------ |
-| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 11.4-RELEASE, 12.3-RELEASE, 13.0-RELEASE, 14-CURRENT (snapshot `20211223-fa255ab1b89-251899`) |
+| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 12.3-RELEASE, 13.0-RELEASE, 14-CURRENT (snapshot `20211223-fa255ab1b89-251899`) |
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 | Intel Core i7-8565U | Qualcomm Atheros QCA6174 | Dell XPS 9380 | 13-STABLE |
