@@ -15,6 +15,13 @@ Wifibox tries to implement as a single easy-to-use software package.
   uses `wpa_supplicant(8)` so it is possible to import the host's
   `wpa_supplicant.conf(5)` file without any changes.
 
+- When configured, `wpa_supplicant(8)` control sockets could be
+  exposed by the guest, which enables use of related utilities
+  directly from the host, such as `wpa_cli(8)` or `wpa_gui(8)` from
+  the
+  [`net/wpa_supplicant_gui`](https://cgit.freebsd.org/ports/tree/net/wpa_supplicant_gui)
+  FreeBSD package.
+
 - Everything is shipped in a single FreeBSD package that can be easily
   installed and removed.  It comes with an `rc(8)` system service that
   automatically launches the guest on boot and stops it on shutdown.
@@ -54,11 +61,9 @@ possible:
 
 - [socat](http://www.dest-unreach.org/socat/) or the respective
   `net/socat` FreeBSD package, through which control sockets for
-  `wpa_supplicant(8)` could be published on the host.  It facilitates
-  the use of tools like `wpa_cli(8)` or `wpa_gui` from the
-  `net/wpa_supplicant_gui` FreeBSD package.  The presence of `socat`
-  is required only if this feature is activated, which is not by
-  default.
+  `wpa_supplicant(8)` could be published on the host.  The presence of
+  `socat` is required only if this feature is activated, which is not
+  by default.
 
 ## Installation
 
