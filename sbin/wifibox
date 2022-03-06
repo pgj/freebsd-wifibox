@@ -322,17 +322,22 @@ wpa_passthru_start() {
 
     [ "${enabled}" = "no" ] && return 0
 
-    log info "Bringing up WPA Supplicant pass-through"
+    if [ ! -x "${SOCAT}" ]; then
+	log warn "Socat binary could not be found as ${SOCAT}, dropping WPA pass-through"
+	return 1
+    fi
+
+    log info "Bringing up WPA pass-through"
     _ctrl_interface=$(get_wpa_supplicant_parameter "ctrl_interface")
     log info "Control interface: ${_ctrl_interface}"
 
     if [ -z "${_ctrl_interface}" ]; then
-	log warn "No WPA Supplicant control interface found, exiting."
+	log warn "No WPA Supplicant control interface found, dropping WPA pass-through"
 	return 1
     fi
 
     if [ ! -d "${_ctrl_interface}" ]; then
-	log warn "Invalid WPA Supplicant control interface, aborting."
+	log warn "Invalid WPA Supplicant control interface, dropping WPA pass-through"
 	return 1
     fi
 
@@ -345,7 +350,7 @@ wpa_passthru_start() {
     log info "Found guest IP address: ${_ip}"
 
     if [ -z "${_ip}" ]; then
-	log warn "No guest IP address could be discovered, aborting."
+	log warn "No guest IP address could be discovered, dropping WPA pass-through"
 	return 1
     fi
 
@@ -368,7 +373,7 @@ wpa_passthru_start() {
 	_port=$(eval "echo \${${_wlan_dev}_port}")
 
 	if [ -z "${_port}" ]; then
-	    log warn "No port defined for ${_wlan}, skipping."
+	    log warn "No port defined for ${_wlan}, dropping WPA pass-through"
 	    continue
 	fi
 
@@ -384,7 +389,7 @@ wpa_passthru_stop() {
     local _socats
 
     _socats=$(${PGREP} -fx "${SOCAT} UNIX-RECVFROM:.* TCP4:.*")
-    log info "Tearing down WPA supplicant pass-through"
+    log info "Tearing down WPA pass-through"
     log info "socat processes found: [${_socats}]"
 
     # shellcheck disable=SC2086

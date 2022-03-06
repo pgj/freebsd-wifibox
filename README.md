@@ -56,7 +56,9 @@ possible:
   `net/socat` FreeBSD package, through which control sockets for
   `wpa_supplicant(8)` could be published on the host.  It facilitates
   the use of tools like `wpa_cli(8)` or `wpa_gui` from the
-  `net/wpa_supplicant_gui` FreeBSD package.
+  `net/wpa_supplicant_gui` FreeBSD package.  The presence of `socat`
+  is required only if this feature is activated, which is not by
+  default.
 
 ## Installation
 
