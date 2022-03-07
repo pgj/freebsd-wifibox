@@ -4,6 +4,6 @@
 # from the output of the pciconf(8) tool.
 
 #cpus=1       # number of CPUs allocated for the guest
-#memory=86M   # amount of memory allocated for the guest
+#memory=90M   # amount of memory allocated for the guest
 #passthru=    # expected format: "s/b/f", e.g. "3/0/0"
 #console=no   # "yes" actives the nmdm(4) console
