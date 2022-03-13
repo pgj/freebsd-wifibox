@@ -7,9 +7,8 @@ improve the wireless networking experience on FreeBSD, of which
 Wifibox tries to implement as a single easy-to-use software package.
 
 - [bhyve], a lightweight virtualization solution for FreeBSD, is
-  utilized to run [Alpine Linux], a security-oriented, lightweight
-  Linux distribution based on musl libc and busybox.  This helps to
-  achieve low resource footprint.
+  utilized to run the embedded Linux system.  This helps to achieve
+  low resource footprint.
 
 - Configuration files are shared with the host system.  The guest
   uses `wpa_supplicant(8)` so it is possible to import the host's
@@ -46,7 +45,8 @@ possible:
   Linux versions, but it is not performing well enough under FreeBSD.
 
 - A CPU that is supported by [bhyve] PCI pass-through (I/O MMU) with
-  ~150 MB physical memory and ~370 MB disk space available.
+  ~256 MB physical memory or less depending on the guest, and some
+  disk space available for the guest virtual disk image.
 
 - A supported FreeBSD/amd64 system: 12.3-RELEASE or 13.0-RELEASE.
   14-CURRENT might work.
@@ -68,10 +68,10 @@ possible:
 ## Installation
 
 Use the `net/wifibox` FreeBSD port which is available at the
-[freebsd-wifibox-port](https://github.com/pgj/freebsd-wifibox-port)
-repository and automatically takes care of all the following details
-and offers proper removal of the installed files, hence it is a more
-convenient way to manage the whole installation process.
+[freebsd-wifibox-port] repository and automatically takes care of all
+the following details, installs a guest image, and offers proper
+removal of the installed files, hence it is a more convenient way to
+manage the whole installation process.
 
 ### Manual Installation
 
@@ -83,8 +83,8 @@ mostly recommended for development and testing.
 # make install \
     PREFIX=<prefix> \
     LOCALBASE=<prefix of the grub2-bhyve and socat packages> \
-    IMGXZ=<disk image location> \
-    IMGMAN=<disk image manual page> \
+    GUEST_ROOT=<guest disk image location> \
+    GUEST_MAN=<guest manual page location> \
     BHYVE=<bhyve binary location> \
     BHYVECTL=<bhyvectl binary location> \
     VMM_KO=<vmm kernel module location>
@@ -95,20 +95,22 @@ is possible to set the `LOCALBASE` variable to tell if the prefix
 under which the `grub-bhyve` and `socat` utilities were installed is
 different.
 
-The `IMGXZ` variable should point to the virtual machine image to use,
-which is `disk.img.xz` by default.  Note that this file is not part of
-the repository because it is usually a large binary file.  That is why
-it is released separately from the
-[freebsd-wifibox-image](https://github.com/pgj/freebsd-wifibox-image)
-repository, under the
-[Releases](https://github.com/pgj/freebsd-wifibox-image/releases) tab.
-Grab one of those files (ideally, the latest), and either place it in
-working directory as `disk.img.xz` or set the value of `IMGXZ` to the
-location of the downloaded file on the file system.
+The `GUEST_ROOT` variable should point to the directory that houses
+the files related to the guest.  Note that these are not part of the
+repository and should be installed individually.  For example, such
+files could be installed from the [freebsd-wifibox-alpine] repository.
 
-Virtual machine images may come with their own documentation, whose
-additional installation can be requested by optionally setting the
-value of the `IMGMAN` variable.
+- GRUB is going to be configured according to the contents of
+  `grub.cfg`, and then the system is booted from the virtual disk
+  image whose contents should be stored as `disk.img`.
+
+- When needed, `device.map` could also be placed there to teach GRUB
+  about the virtual disk image.
+
+- It is possible for the guest to modify the bhyve-related
+  configuration options by installing a `bhyve.conf` file.  Its
+  structure should be similar to one shipped with Wifibox itself, but
+  it should be talking about the CPU and memory configuration only.
 
 The `BHYVE`, `BHYVECTL`, and `VMM_KO` variables give the location of
 the `bhyve`, `bhyvectl` binaries, and the `vmm.ko` kernel module
@@ -145,4 +147,5 @@ configuration added here!
 
 [bhyve]: https://wiki.freebsd.org/bhyve
 [bhyve+]: https://github.com/pgj/freebsd-bhyve-plus-port/
-[Alpine Linux]: https://alpinelinux.org/
+[freebsd-wifibox-port]: https://github.com/pgj/freebsd-wifibox-port
+[freebsd-wifibox-alpine]: https://github.com/pgj/freebsd-wifibox-alpine

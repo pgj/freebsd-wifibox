@@ -5,6 +5,7 @@ set -o pipefail
 PREFIX=%%PREFIX%%
 LOCALBASE=%%LOCALBASE%%
 VERSION=%%VERSION%%
+GUEST_ROOT=%%GUEST_ROOT%%
 SCRIPT=${PREFIX}/sbin/wifibox
 LOGDIR=/var/log
 RUNDIR=/var/run/wifibox
@@ -43,7 +44,7 @@ WIFIBOX_LOG=${LOGDIR}/wifibox.log
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
 : "${SOCAT:=${LOCALBASE}/bin/socat}"
 
-DISK_IMAGE="${PREFIX}/share/wifibox/disk.img"
+DISK_IMAGE="${GUEST_ROOT}/disk.img"
 
 NMDM_DEVICE=/dev/nmdm-wifibox
 NMDM_A="${NMDM_DEVICE}.1A"
@@ -451,24 +452,34 @@ vm_start() {
     local _wpa_ctrl_enabled
     local _wpa_conf_mode
     local _grub_bhyve_args
+    local _grub_device_map="${GUEST_ROOT}/device.map"
+    local _grub_cfg="${GUEST_ROOT}/grub.cfg"
+    local _bhyve_conf="${GUEST_ROOT}/bhyve.conf"
     local _bhyve_args
     local _pid
 
     log info "Gathering necessary configuration files for launching the guest"
     check_configuration "${CONFDIR}/bhyve.conf"
-    check_configuration "${CONFDIR}/interfaces.conf"
-    check_configuration "${CONFDIR}/udhcpd.conf"
     check_configuration "${CONFDIR}/wpa_ctrl.conf"
     check_configuration "${WPA_CONFDIR}/wpa_supplicant.conf"
 
     cpus=1
-    memory=90M
+    memory=128M
     passthru=
     console=no
+
+    if [ -f "${_bhyve_conf}" ]; then
+	log info "Pulling bhyve options from guest-specific configuration file"
+	# shellcheck source=./etc/bhyve.conf.sample
+	. "${_bhyve_conf}"
+    else
+	log info "No guest-specific bhyve configuration file found"
+    fi
 
     log info "Pulling bhyve options from configuration file"
     # shellcheck source=./etc/bhyve.conf.sample
     . "${CONFDIR}/bhyve.conf"
+
     log debug "cpus=${cpus}, memory=${memory}, passthru=${passthru}, console=${console}"
 
     if [ "${console}" = "yes" ]; then
@@ -518,18 +529,28 @@ vm_start() {
 	log info "wpa_supplicant.conf will be mounted writable"
     fi
 
-    log info "Launching guest ${WIFIBOX_VM} with grub-bhyve"
+    log info "Launching guest ${WIFIBOX_VM} from ${GUEST_ROOT} with grub-bhyve"
+
+    if [ ! -f "${_grub_cfg}" ]; then
+	log error "${_grub_cfg} could not be found, guest cannot be started"
+	exit 4
+    fi
+
+    if [ ! -f "${DISK_IMAGE}" ]; then
+	log error "${DISK_IMAGE} could not be found, guest cannot be started"
+	exit 4
+    fi
 
     _grub_bhyve_args=""
     _grub_bhyve_args="${_grub_bhyve_args} -S -M ${memory}"
     _grub_bhyve_args="${_grub_bhyve_args} -r host ${_nmdm_grub_bhyve}"
-    _grub_bhyve_args="${_grub_bhyve_args} -m ${PREFIX}/share/wifibox/device.map"
-    _grub_bhyve_args="${_grub_bhyve_args} -d ${PREFIX}/share/wifibox ${WIFIBOX_VM}"
+    [ -f "${_grub_device_map}" ] \
+	&& _grub_bhyve_args="${_grub_bhyve_args} -m ${_grub_device_map}"
+    _grub_bhyve_args="${_grub_bhyve_args} -d ${GUEST_ROOT} ${WIFIBOX_VM}"
 
     log debug "Arguments: ${_grub_bhyve_args}"
     ${GRUB_BHYVE} ${_grub_bhyve_args} 2>&1 | capture_output debug grub-bhyve
-
-    log info "Launching guest ${WIFIBOX_VM} with bhyve"
+    log info "Launching guest ${WIFIBOX_VM} from ${GUEST_ROOT} with bhyve"
 
     _bhyve_args=""
     _bhyve_args="${_bhyve_args} -c ${cpus}"
