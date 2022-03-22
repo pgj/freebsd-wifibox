@@ -138,6 +138,7 @@ configurations:
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 | Intel Core i7-8565U | Qualcomm Atheros QCA6174 | Dell XPS 9380 | 13-STABLE |
+| AMD Ryzen 5 5600G | Intel Wi-Fi 6 AX-200 | ASUS ROG STRIX B550-I GAMING | 14-CURRENT |
 
 Feel free to submit a pull request or write an email to have your
 configuration added here!
