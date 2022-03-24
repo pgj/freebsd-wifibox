@@ -1,4 +1,4 @@
-.Dd March 2, 2022
+.Dd March 24, 2022
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -61,6 +61,22 @@ configuration file in the
 directory that can be used to restart
 .Nm
 on resume.
+.Pp
+By default, PCI pass-through is disabled for AMD-based hardware, hence
+it must be explicitly enabled via the corresponding
+.Xr syctl 8
+variable.  This can be done by adding the following line to either
+.Pa /etc/sysctl.conf
+or
+.Pa /boot/loader.conf
+depending on whether
+.Xr vmm 4
+is going to be loaded by
+.Nm
+or it is already loaded at boot.
+.Bd -literal -offset indent
+hw.vmm.amdvi.enable=1
+.Ed
 .Pp
 In order to make
 .Nm
@@ -252,6 +268,9 @@ The exit status is 0 on success, and >0 if any of the commands fail.
 .Xr bhyve 8 ,
 .Xr vmm 4 ,
 .Xr bridge 4 ,
+.Xr sysctl 8 ,
+.Xr sysctl.conf 5 ,
+.Xr loader.conf 5 ,
 .Xr rc.conf 5 ,
 .Xr devd.conf 5 ,
 .Xr devd 8 ,
