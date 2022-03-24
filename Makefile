@@ -14,7 +14,6 @@ SED=/usr/bin/sed
 XZ=/usr/bin/xz
 CP=/bin/cp
 CHMOD=/bin/chmod
-CHOWN=/usr/sbin/chown
 GZIP=/usr/bin/gzip
 GIT=$(LOCALBASE)/bin/git
 ID=/usr/bin/id
@@ -57,12 +56,11 @@ APPLIANCE_DIR=	$(RUNDIR)/appliance
 APPLIANCE_DIRS=	$(APPLIANCE_DIR)/cache \
 		$(APPLIANCE_DIR)/empty \
 		$(APPLIANCE_DIR)/lib/apk \
-		$(APPLIANCE_DIR)/lib/chrony \
 		$(APPLIANCE_DIR)/lib/iptables \
 		$(APPLIANCE_DIR)/lib/misc \
 		$(APPLIANCE_DIR)/lib/udhcpd \
 		$(APPLIANCE_DIR)/local \
-		$(APPLIANCE_DIR)/log/chrony \
+		$(APPLIANCE_DIR)/log \
 		$(APPLIANCE_DIR)/mail \
 		$(APPLIANCE_DIR)/opt \
 		$(APPLIANCE_DIR)/spool/cron \
@@ -96,10 +94,6 @@ install:
 	$(MKDIR) -p $(RUNDIR)
 	$(MKDIR) -p $(APPLIANCE_DIRS)
 	$(LN) -s /run $(APPLIANCE_DIR)
-
-.if $(UID) == 0
-	$(CHOWN) 100:101 $(APPLIANCE_DIR)/lib/chrony $(APPLIANCE_DIR)/log/chrony
-.endif
 
 .MAIN: clean
 
