@@ -94,6 +94,7 @@ install:
 	$(MKDIR) -p $(RUNDIR)
 	$(MKDIR) -p $(APPLIANCE_DIRS)
 	$(LN) -s /run $(APPLIANCE_DIR)
+	$(LN) -s /run/lock $(APPLIANCE_DIR)
 
 .MAIN: clean
 
