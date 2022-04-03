@@ -514,7 +514,7 @@ vm_start() {
 	log info "wpa_supplicant.conf will be mounted writable"
     fi
 
-    log info "Lauching guest ${WIFIBOX_VM} with grub-bhyve"
+    log info "Launching guest ${WIFIBOX_VM} with grub-bhyve"
 
     _grub_bhyve_args=""
     _grub_bhyve_args="${_grub_bhyve_args} -S -M ${memory}"
