@@ -16,6 +16,7 @@ WIFIBOX_LOG=${LOGDIR}/wifibox.log
 : "${BHYVECTL:=%%BHYVECTL%%}"
 : "${VMM_KO:=%%VMM_KO%%}"
 : "${DEVCTL:=/usr/sbin/devctl}"
+: "${DAEMON:=/usr/sbin/daemon}"
 : "${IFCONFIG:=/sbin/ifconfig}"
 : "${SYSCTL:=/sbin/sysctl}"
 : "${KLDLOAD:=/sbin/kldload}"
@@ -50,6 +51,8 @@ NMDM_B="${NMDM_DEVICE}.1B"
 
 WIFIBOX_IF="wifibox0"
 WIFIBOX_VM="wifibox"
+
+WPA_PASSTHRU_DAEMON_ID="wifibox-wpa-passthru"
 
 log() {
     local _type="$1"
@@ -378,7 +381,8 @@ wpa_passthru_start() {
 	fi
 
 	log info "Hooking up ${_ip}:${_port} as ${_ctrl_socket}"
-	${SOCAT} \
+	${DAEMON} -r -t "${WPA_PASSTHRU_DAEMON_ID}" \
+	    ${SOCAT} \
 	    UNIX-RECVFROM:"${_ctrl_socket}",reuseaddr,fork,unlink-early,user=root,group="${_ctrl_interface_group}",mode=770 \
 	    TCP4:"${_ip}":"${_port}" 2>&1 \
 	    | capture_output debug socat &
@@ -388,9 +392,9 @@ wpa_passthru_start() {
 wpa_passthru_stop() {
     local _socats
 
-    _socats=$(${PGREP} -fx "${SOCAT} UNIX-RECVFROM:.* TCP4:.*")
+    _socats=$(${PGREP} -fx "daemon: ${WPA_PASSTHRU_DAEMON_ID}\[[0-9]*\]")
     log info "Tearing down WPA pass-through"
-    log info "socat processes found: [${_socats}]"
+    log info "Daemonized socat processes found: [${_socats}]"
 
     # shellcheck disable=SC2086
     [ -n "${_socats}" ] \
