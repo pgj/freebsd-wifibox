@@ -1,4 +1,4 @@
-.Dd March 24, 2022
+.Dd April 10, 2022
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -88,6 +88,32 @@ wifibox_enable="YES"
 .Pp
 At the same time, make sure that no FreeBSD driver is configured for
 the same device and remove all the related settings from there.  The
+.Xr devmatch 8
+utility might be used to stop any conflicting drivers from loading
+automatically.  For example, the
+.Xr iwm 4
+and
+.Xr iwlwifi 4
+native drivers could be disabled in
+.Xr rc.conf 5
+as shown below.
+.Bd -literal -offset indent
+devmatch_enable="YES"
+devmatch_blocklist="if_iwm if_iwlwifi"
+.Ed
+.Pp
+Note these settings will only take effect on the next boot.  Until
+then the
+.Nm devmatch
+service must be started and the drivers should be removed manually by
+using
+.Xr kldunload 8 .
+.Bd -literal -offset indent
+# service devmatch start
+# kldunload if_iwm if_iwlwifi
+.Ed
+.Pp
+The
 .Nm
 service can be then started up as follows.
 .Bd -literal -offset indent
@@ -272,6 +298,8 @@ The exit status is 0 on success, and >0 if any of the commands fail.
 .Xr sysctl.conf 5 ,
 .Xr loader.conf 5 ,
 .Xr rc.conf 5 ,
+.Xr devmatch 8 ,
+.Xr kldunload 8 ,
 .Xr devd.conf 5 ,
 .Xr devd 8 ,
 .Xr cu 1 ,
