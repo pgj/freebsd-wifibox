@@ -28,6 +28,7 @@ WIFIBOX_LOG=${LOGDIR}/wifibox.log
 
 : "${CAT:=/bin/cat}"
 : "${ECHO:=/bin/echo}"
+: "${PS:=/bin/ps}"
 : "${PRINTF:=/usr/bin/printf}"
 : "${GREP:=/usr/bin/grep}"
 : "${SED:=/usr/bin/sed}"
@@ -54,6 +55,7 @@ WIFIBOX_IF="wifibox0"
 WIFIBOX_VM="wifibox"
 
 WPA_PASSTHRU_DAEMON_ID="wifibox-wpa-passthru"
+VM_MANAGER_DAEMON_ID="wifibox-vm-manager"
 
 log() {
     local _type="$1"
@@ -416,11 +418,8 @@ get_ppt_device() {
     fi
 }
 
-get_vm_pid() {
-    local _process
-
-    _process="$(basename ${BHYVE})"
-    ${PGREP} -fx "${_process}[: ].* ${WIFIBOX_VM}"
+get_vm_manager_pid() {
+    ${PGREP} -fx "daemon: ${VM_MANAGER_DAEMON_ID}\[[0-9]*\]"
 }
 
 destroy_vm() {
@@ -441,8 +440,41 @@ destroy_vm() {
     fi
 }
 
-# shellcheck disable=SC2086
 vm_start() {
+    local _pid
+
+    ${DAEMON} -r -t "${VM_MANAGER_DAEMON_ID}" \
+	      "${0}" _manage_vm
+
+    log info "Waiting for bhyve to start up"
+
+    ${SLEEP} 1 2>&1 | capture_output debug sleep
+    _pid="$(get_vm_manager_pid)"
+
+    if [ -z "${_pid}" ]; then
+	log error "Guest could not be started"
+	exit 4
+    else
+	log info "Guest ${WIFIBOX_VM} has started up"
+    fi
+
+    log info "Guest is managed by PID ${_pid}"
+}
+
+assert_daemonized() {
+    local _parent
+
+    _parent=$(${PS} -o comm $PPID | ${TAIL} +2)
+    log debug "assert daemonized: parent=${_parent}"
+
+    if [ "${_parent}" != "daemon" ]; then
+	log error "This portion of the program could only be run daemonized"
+	exit 127
+    fi
+}
+
+# shellcheck disable=SC2086
+vm_manager() {
     local _nmdm_grub_bhyve
     local _nmdm_bhyve
     local _passthru_bhyve
@@ -452,13 +484,19 @@ vm_start() {
     local _wpa_ctrl_enabled
     local _wpa_conf_mode
     local _grub_bhyve_args
+    local _grub_bhyve_exit_code
     local _grub_device_map="${GUEST_ROOT}/device.map"
     local _grub_cfg="${GUEST_ROOT}/grub.cfg"
     local _bhyve_conf="${GUEST_ROOT}/bhyve.conf"
     local _bhyve_args
-    local _pid
+    local _bhyve_exit_code
+    local _restart
 
+    assert_daemonized
+
+    log info "VM manager launched"
     log info "Gathering necessary configuration files for launching the guest"
+
     check_configuration "${CONFDIR}/bhyve.conf"
     check_configuration "${CONFDIR}/wpa_ctrl.conf"
     check_configuration "${WPA_CONFDIR}/wpa_supplicant.conf"
@@ -550,6 +588,19 @@ vm_start() {
 
     log debug "Arguments: ${_grub_bhyve_args}"
     ${GRUB_BHYVE} ${_grub_bhyve_args} 2>&1 | capture_output debug grub-bhyve
+
+    _grub_bhyve_exit_code="$?"
+
+    if [ "${_grub_bhyve_exit_code}" -ne "0" ]; then
+	destroy_vm
+
+	log debug "exit_code=${_grub_bhyve_exit_code}"
+	log info "grub-bhyve failed to start, signaling restart after 5 seconds"
+
+	${SLEEP} 5 2>&1 | capture_output debug sleep
+	exit 1
+    fi
+
     log info "Launching guest ${WIFIBOX_VM} from ${GUEST_ROOT} with bhyve"
 
     _bhyve_args=""
@@ -567,29 +618,36 @@ vm_start() {
     _bhyve_args="${_bhyve_args} ${WIFIBOX_VM}"
 
     log debug "Arguments: ${_bhyve_args}"
-    ${BHYVE} ${_bhyve_args} 2>&1 | capture_output debug bhyve &
-    log info "Waiting for bhyve to start up"
-    ${SLEEP} 1 2>&1 | capture_output debug sleep
-    _pid="$(get_vm_pid)"
-    log debug "Guest is backed by PID ${_pid}"
+    ${BHYVE} ${_bhyve_args} 2>&1 | capture_output debug bhyve
+    _bhyve_exit_code="$?"
+    destroy_vm
 
-    if [ -z "${_pid}" ]; then
-	destroy_vm
-	destroy_nmdm
-	destroy_bridge
-	log error "Guest could not be started"
-	exit 4
-    else
-	log info "Guest ${WIFIBOX_VM} has started up"
-    fi
+    case "${_bhyve_exit_code}" in
+	0) log info "VM manager: guest was rebooted, signaling restart"
+	   _restart=yes;;
+	1) log info "VM manager: guest was powered off, signaling exit";;
+	2) log info "VM manager: guest was halted, signaling exit";;
+	*) log info "VM manager: guest crashed, signaling restart after 5 seconds"
+	   log debug "exit_code=${_bhyve_exit_code}"
+	   ${SLEEP} 5 2>&1 | capture_output debug sleep
+	   _restart=yes;;
+    esac
+
+    [ -n "${_restart}" ] && exit 1
+
+    destroy_nmdm
+    destroy_bridge
+
+    log info "VM manager: quit daemonization"
+    ${KILL} -SIGTERM $PPID
 }
 
 vm_stop() {
     local _ppt
     local _pid
 
-    _pid="$(get_vm_pid)"
-    log info "Stopping guest ${WIFIBOX_VM}, backed by PID ${_pid}"
+    _pid="$(get_vm_manager_pid)"
+    log info "Stopping guest ${WIFIBOX_VM}, managed by PID ${_pid}"
 
     if ! (${KILL} -SIGTERM "${_pid}" 2>&1 | capture_output debug kill); then
 	log warn "Guest could not be stopped gracefully"
@@ -606,7 +664,7 @@ vm_stop() {
 assert_vm_runs() {
     local _pid
 
-    _pid="$(get_vm_pid)"
+    _pid="$(get_vm_manager_pid)"
     log debug "assert guest runs: pid=${_pid}"
 
     if [ -z "${_pid}" ]; then
@@ -626,10 +684,10 @@ wifibox_start() {
 
     ${PRINTF} "Launching wifibox..."
     assert_vm_can_run
-    _pid="$(get_vm_pid)"
+    _pid="$(get_vm_manager_pid)"
 
     if [ -n "${_pid}" ]; then
-	log error "wifibox is already running as PID ${_pid}"
+	log error "wifibox is already run by PID ${_pid}"
 	exit 1
     fi
 
@@ -763,12 +821,12 @@ wifibox_status() {
     local _pid
 
     log info "Begin: wifibox status"
-    _pid="$(get_vm_pid)"
+    _pid="$(get_vm_manager_pid)"
 
     if [ -n "${_pid}" ]; then
-	output "wifibox is running as PID ${_pid}"
+	output "wifibox is run by PID ${_pid}"
     else
-	log error "wifibox is not running"
+	log error "wifibox is not run"
 	return 1
     fi
 
@@ -831,5 +889,6 @@ case ${command} in
     status) wifibox_status;;
     console) wifibox_console;;
     version) wifibox_version;;
+    _manage_vm) vm_manager;;
     *) wifibox_usage;;
 esac
