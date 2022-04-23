@@ -1,4 +1,4 @@
-.Dd April 10, 2022
+.Dd April 23, 2022
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -324,5 +324,14 @@ command will not probably work on systems where other
 guests are running in parallel as
 .Xr vmm 4
 kernel module could not be unloaded in such cases.
+.Pp
+The PCI pass-through implementation of
+.Xr bhyve 8
+may not be able to cooperate with the Linux system in the guest due to
+lack of emulation of certain quirks and features that are required to
+make the driver work.  Sometimes this can cause strange and unexpected
+error messages.  Always try the latest available version of
+.Xr bhyve 8
+when this happens.
 .Sh AUTHORS
 .An Gábor Páli Aq Mt pali.gabor@gmail.com
