@@ -1,4 +1,16 @@
 # These are the default values that control the overall behavior of
 # wifibox.
 
-#loglevel=warn  # level of logging: none < error < warn < info < debug
+# Level of logging.  Verbosity increases in the following order.
+#
+# - none:  No messages are either displayed or logged.
+# - error: Only error messages are displayed and logged.
+# - warn:  Error and warning messages are displayed and logged.  That
+#          is the default.
+# - info:  Besides error and warning messages, informative messages
+#          about the execution are logged.
+# - debug: In addition to errors, warnings, and informative messages,
+#          some extra information about the program's state is logged.
+#          Useful for troubleshooting, but mostly makes sense when
+#          read together with the source code.
+loglevel=warn
