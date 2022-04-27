@@ -1,8 +1,12 @@
 # This is configuration file for udhcpd(8) with relatively sane
 # defaults.  Consult https://udhcp.busybox.net/udhcpd.conf for more.
-# The interface should match with the one defined in the
-# interfaces.conf file: router is the address and subnet is the
-# netmask.
+#
+# The value of `interface` should match with the one defined in the
+# interfaces.conf file: `interface` should be exactly the same,
+# `router` should correspond to `address` and `subnet` is the
+# `netmask`.  According to these settings below, the IP addresses are
+# handed out for the 10.0.0.0/24 network.  Change these only if this
+# is not suitable.
 
 start		10.0.0.2
 end		10.0.0.254

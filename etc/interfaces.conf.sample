@@ -1,7 +1,11 @@
 # This is an iface stanza for interfaces(5) with relatively sane
 # defaults.  Consult http://manpages.org/etc-network-interfaces/5 for
-# more.  The purpose is to bring up an interface which would be the
-# default gateway.
+# more.
+#
+# The purpose is to bring up an interface on the guest which would be
+# the default gateway for the host.  Here, `eth0` is the networking
+# interface of the virtual Ethernet card.  Change these values only if
+# the 10.0.0.0/24 network is not suitable.
 
 iface eth0 inet static
   address 10.0.0.1
