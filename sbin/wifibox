@@ -225,8 +225,12 @@ check_configuration() {
     fi
 }
 
+has_bridge_interface() {
+    ${IFCONFIG} | ${GREP} -Fq "${WIFIBOX_IF}: "
+}
+
 get_tap_interface() {
-    if (${IFCONFIG} | ${GREP} -Fq "${WIFIBOX_IF}: "); then
+    if has_bridge_interface; then
 	${IFCONFIG} "${WIFIBOX_IF}" \
 	    | ${GREP} -F member \
 	    | ${SED} -E 's/^.*member:.*(tap[^ ]*).*$/\1/'
@@ -238,18 +242,29 @@ get_tap_interface() {
 create_bridge() {
     local _tap
 
-    log info "Creating bridge interface: ${WIFIBOX_IF}"
-    ${IFCONFIG} bridge create name ${WIFIBOX_IF} up 2>&1 | capture_output debug ifconfig
-    _tap="$(${IFCONFIG} tap create up)"
+    if ! has_bridge_interface; then
+	log info "Creating bridge interface: ${WIFIBOX_IF}"
+	${IFCONFIG} bridge create name ${WIFIBOX_IF} up 2>&1 | capture_output debug ifconfig
+    else
+	log warn "Bridge interface already exists: ${WIFIBOX_IF}, skipping creation"
+    fi
 
-    log info "Linking tap interface to ${WIFIBOX_IF}: ${_tap}"
-    ${IFCONFIG} ${WIFIBOX_IF} addm "${_tap}" 2>&1 | capture_output debug ifconfig
+    _tap="$(get_tap_interface)"
+
+    if [ -z "${_tap}" ]; then
+	_tap="$(${IFCONFIG} tap create up)"
+	log info "Linking tap interface to ${WIFIBOX_IF}: ${_tap}"
+	${IFCONFIG} ${WIFIBOX_IF} addm "${_tap}" 2>&1 | capture_output debug ifconfig
+    else
+	log warn "Linked tap interface already exists: ${_tap}, skipping creation"
+    fi
 }
 
 destroy_bridge() {
     local _tap
 
     _tap="$(get_tap_interface)"
+
     log info "Destroying bridge interface: ${WIFIBOX_IF}"
     ${IFCONFIG} ${WIFIBOX_IF} destroy 2>&1 | capture_output debug ifconfig
 
@@ -310,9 +325,14 @@ find_guest_ip() {
 	| ${SED} -E "s!^default[ ]+([0-9\.]+)[ ]+.*${WIFIBOX_IF}\$!\1!"
 }
 
+get_wpa_passthru_connections() {
+    ${PGREP} -fx "daemon: ${WPA_PASSTHRU_DAEMON_ID}\[[0-9]*\]"
+}
+
 wpa_passthru_start() {
     local enabled
     local network
+    local _connections
     local _ctrl_interface
     local _ctrl_interface_group
     local _wlan_devs
@@ -327,6 +347,13 @@ wpa_passthru_start() {
     . "${CONFDIR}/wpa_ctrl.conf"
 
     [ "${enabled}" = "no" ] && return 0
+
+    _connections="$(get_wpa_passthru_connections)"
+
+    if [ -n "${_connections}" ]; then
+	log warn "WPA Supplicant control sockets are already forwarded, skipping"
+	return 1
+    fi
 
     if [ ! -x "${SOCAT}" ]; then
 	log warn "Socat binary could not be found as ${SOCAT}, dropping WPA pass-through"
@@ -393,15 +420,16 @@ wpa_passthru_start() {
 }
 
 wpa_passthru_stop() {
-    local _socats
+    local _connections
 
-    _socats=$(${PGREP} -fx "daemon: ${WPA_PASSTHRU_DAEMON_ID}\[[0-9]*\]")
+    _connections="$(get_wpa_passthru_connections)"
+
     log info "Tearing down WPA pass-through"
-    log info "Daemonized socat processes found: [${_socats}]"
+    log info "Daemonized socat processes found: [${_connections}]"
 
     # shellcheck disable=SC2086
-    [ -n "${_socats}" ] \
-	&& ${KILL} -TERM ${_socats}
+    [ -n "${_connections}" ] \
+	&& ${KILL} -TERM ${_connections}
 }
 
 get_ppt_device() {
@@ -442,6 +470,13 @@ destroy_vm() {
 
 vm_start() {
     local _pid
+
+    _pid="$(get_vm_manager_pid)"
+
+    if [ -n "${_pid}" ]; then
+	log warn "Guest is already run by PID ${_pid}, left intact"
+	return 1
+    fi
 
     ${DAEMON} -r -t "${VM_MANAGER_DAEMON_ID}" \
 	      "${0}" _manage_vm
@@ -647,6 +682,12 @@ vm_stop() {
     local _pid
 
     _pid="$(get_vm_manager_pid)"
+
+    if [ -z "${_pid}" ]; then
+	log warn "Guest is not running, hence not stopped"
+	return 1
+    fi
+
     log info "Stopping guest ${WIFIBOX_VM}, managed by PID ${_pid}"
 
     if ! (${KILL} -SIGTERM "${_pid}" 2>&1 | capture_output debug kill); then
@@ -661,35 +702,14 @@ vm_stop() {
     destroy_vm
 }
 
-assert_vm_runs() {
-    local _pid
-
-    _pid="$(get_vm_manager_pid)"
-    log debug "assert guest runs: pid=${_pid}"
-
-    if [ -z "${_pid}" ]; then
-	log error "wifibox is not running"
-	exit 1
-    fi
-}
-
 show_progress() {
     ${PRINTF} "."
 }
 
 wifibox_start() {
-    local _pid
-
     log info "Begin: wifibox start"
-
-    ${PRINTF} "Launching wifibox..."
+    ${PRINTF} "Starting wifibox..."
     assert_vm_can_run
-    _pid="$(get_vm_manager_pid)"
-
-    if [ -n "${_pid}" ]; then
-	log error "wifibox is already run by PID ${_pid}"
-	exit 1
-    fi
 
     create_bridge
     show_progress
@@ -709,9 +729,7 @@ wifibox_start() {
 
 wifibox_stop() {
     log info "Begin: wifibox stop"
-
     ${PRINTF} "Stopping wifibox..."
-    assert_vm_runs
 
     wpa_passthru_stop
     show_progress
@@ -774,7 +792,6 @@ wifibox_restart() {
     ${PRINTF} "Restarting wifibox..."
 
     if has_flag "${_restart}" "G"; then
-	assert_vm_runs
 	wpa_passthru_stop
 	show_progress
 	vm_stop
@@ -821,6 +838,7 @@ wifibox_status() {
     local _pid
 
     log info "Begin: wifibox status"
+
     _pid="$(get_vm_manager_pid)"
 
     if [ -n "${_pid}" ]; then
@@ -834,8 +852,16 @@ wifibox_status() {
 }
 
 wifibox_console() {
+    local _pid
+
     log info "Begin: wifibox console"
-    assert_vm_runs
+    _pid="$(get_vm_manager_pid)"
+    log debug "Guest is run by ${_pid}"
+
+    if [ -z "${_pid}" ]; then
+	log error "There is no guest to attach to"
+	exit 127
+    fi
 
     if [ ! -c ${NMDM_B} ]; then
 	log error "No null-modem device is configured"
