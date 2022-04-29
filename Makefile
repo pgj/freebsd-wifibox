@@ -15,9 +15,6 @@ CP=/bin/cp
 CHMOD=/bin/chmod
 GZIP=/usr/bin/gzip
 GIT=$(LOCALBASE)/bin/git
-ID=/usr/bin/id
-
-UID!=		$(ID) -u
 
 .if !defined(VERSION)
 VERSION!=	$(GIT) describe --tags --always
