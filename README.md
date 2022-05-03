@@ -17,9 +17,7 @@ Wifibox tries to implement as a single easy-to-use software package.
 - When configured, `wpa_supplicant(8)` control sockets could be
   exposed by the guest, which enables use of related utilities
   directly from the host, such as `wpa_cli(8)` or `wpa_gui(8)` from
-  the
-  [`net/wpa_supplicant_gui`](https://cgit.freebsd.org/ports/tree/net/wpa_supplicant_gui)
-  FreeBSD package.
+  the [net/wpa_supplicant_gui] FreeBSD package.
 
 - Everything is shipped in a single FreeBSD package that can be easily
   installed and removed.  It comes with an `rc(8)` system service that
@@ -55,15 +53,13 @@ possible:
   fill gaps present in the base system.  For FreeBSD 12, this is
   mandatory, but it may come handy on newer systems as well.
 
-- [grub2-bhyve](https://github.com/grehan-freebsd/grub2-bhyve) or the
-  corresponding `sysutils/grub2-bhyve` FreeBSD package, so the Linux
-  guest could be booted via GRUB 2.
+- [grub2-bhyve] or the corresponding `sysutils/grub2-bhyve` FreeBSD
+  package, so the Linux guest could be booted via GRUB 2.
 
-- [socat](http://www.dest-unreach.org/socat/) or the respective
-  `net/socat` FreeBSD package, through which control sockets for
-  `wpa_supplicant(8)` could be published on the host.  The presence of
-  `socat` is required only if this feature is activated, which is not
-  by default.
+- [socat] or the respective `net/socat` FreeBSD package, through which
+  control sockets for `wpa_supplicant(8)` could be published on the
+  host.  The presence of `socat` is required only if this feature is
+  activated, which is not by default.
 
 ## Installation
 
@@ -116,7 +112,7 @@ The `BHYVE`, `BHYVECTL`, and `VMM_KO` variables give the location of
 the `bhyve`, `bhyvectl` binaries, and the `vmm.ko` kernel module
 respectively.  By default, these are the ones in the base system
 (i.e. `/usr/sbin/bhyve`) but they might be insufficient on older
-systems, due to lack of support for VirtFS/9p file system passthrough
+systems, due to lack of support for VirtFS/9P file system passthrough
 or missing fixes.  If [bhyve+] is installed, this is the way to hook
 it up.
 
@@ -150,3 +146,6 @@ configuration added here!
 [bhyve+]: https://github.com/pgj/freebsd-bhyve-plus-port/
 [freebsd-wifibox-port]: https://github.com/pgj/freebsd-wifibox-port
 [freebsd-wifibox-alpine]: https://github.com/pgj/freebsd-wifibox-alpine
+[net/wpa_supplicant_gui]: https://cgit.freebsd.org/ports/tree/net/wpa_supplicant_gui
+[grub2-bhyve]: https://github.com/grehan-freebsd/grub2-bhyve
+[socat]: http://www.dest-unreach.org/socat/
