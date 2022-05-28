@@ -10,8 +10,8 @@ SCRIPT=${PREFIX}/sbin/wifibox
 LOGDIR=/var/log
 RUNDIR=/var/run/wifibox
 CONFDIR=${PREFIX}/etc/wifibox
-WPA_CONFDIR=${CONFDIR}/wpa_supplicant
 WIFIBOX_LOG=${LOGDIR}/wifibox.log
+UDS_CONFIG=${CONFDIR}/appliance/uds_passthru.conf
 
 : "${BHYVE:=%%BHYVE%%}"
 : "${BHYVECTL:=%%BHYVECTL%%}"
@@ -28,6 +28,7 @@ WIFIBOX_LOG=${LOGDIR}/wifibox.log
 
 : "${CAT:=/bin/cat}"
 : "${ECHO:=/bin/echo}"
+: "${EXPR:=/bin/expr}"
 : "${PS:=/bin/ps}"
 : "${PRINTF:=/usr/bin/printf}"
 : "${GREP:=/usr/bin/grep}"
@@ -40,7 +41,7 @@ WIFIBOX_LOG=${LOGDIR}/wifibox.log
 : "${RM:=/bin/rm}"
 : "${CU:=/usr/bin/cu}"
 : "${NETSTAT:=/usr/bin/netstat}"
-: "${STAT:=/usr/bin/stat}"
+: "${READLINK:=/usr/bin/readlink}"
 
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
 : "${SOCAT:=${LOCALBASE}/bin/socat}"
@@ -54,7 +55,7 @@ NMDM_B="${NMDM_DEVICE}.1B"
 WIFIBOX_IF="wifibox0"
 WIFIBOX_VM="wifibox"
 
-WPA_PASSTHRU_DAEMON_ID="wifibox-wpa-passthru"
+UDS_PASSTHRU_DAEMON_ID="wifibox-uds-passthru"
 VM_MANAGER_DAEMON_ID="wifibox-vm-manager"
 
 log() {
@@ -310,14 +311,6 @@ destroy_nmdm() {
 	&& log info "Null-modem devices are removed"
 }
 
-get_wpa_supplicant_parameter() {
-    local _parameter="$1"
-
-    check_configuration "${WPA_CONFDIR}/wpa_supplicant.conf"
-    ${GREP} "^${_parameter}=" "${WPA_CONFDIR}/wpa_supplicant.conf" \
-	| ${SED} "s!^${_parameter}=!!"
-}
-
 find_guest_ip() {
     ${NETSTAT} -r \
 	| ${GREP} "^default.*${WIFIBOX_IF}\$" \
@@ -325,54 +318,39 @@ find_guest_ip() {
 	| ${SED} -E "s!^default[ ]+([0-9\.]+)[ ]+.*${WIFIBOX_IF}\$!\1!"
 }
 
-get_wpa_passthru_connections() {
-    ${PGREP} -fx "daemon: ${WPA_PASSTHRU_DAEMON_ID}\[[0-9]*\]"
+get_uds_passthru_connections() {
+    ${PGREP} -fx "daemon: ${UDS_PASSTHRU_DAEMON_ID}\[[0-9]*\]"
 }
 
-wpa_passthru_start() {
-    local enabled
+uds_passthru_start() {
     local network
+    local sockets
     local _connections
-    local _ctrl_interface
-    local _ctrl_interface_group
-    local _wlan_devs
-    local _wlan
     local _ip
+    local _path
     local _port
+    local _user
+    local _group
+    local _mode
 
-    check_configuration "${CONFDIR}/wpa_ctrl.conf"
-    enabled=no
+    [ ! -r "${UDS_CONFIG}" ] && return 0
 
-    # shellcheck source=./etc/wpa_ctrl.conf.sample
-    . "${CONFDIR}/wpa_ctrl.conf"
-
-    [ "${enabled}" = "no" ] && return 0
-
-    _connections="$(get_wpa_passthru_connections)"
+    _connections="$(get_uds_passthru_connections)"
 
     if [ -n "${_connections}" ]; then
-	log warn "WPA Supplicant control sockets are already forwarded, skipping"
+	log warn "Unix Domain Sockets are already forwarded, skipping"
 	return 1
     fi
 
     if [ ! -x "${SOCAT}" ]; then
-	log warn "Socat binary could not be found as ${SOCAT}, dropping WPA pass-through"
+	log warn "Socat binary could not be found as ${SOCAT}, dropping UDS pass-through"
 	return 1
     fi
 
-    log info "Bringing up WPA pass-through"
-    _ctrl_interface=$(get_wpa_supplicant_parameter "ctrl_interface")
-    log info "Control interface: ${_ctrl_interface}"
+    log info "Bringing up Unix Domain Socket pass-through"
 
-    if [ -z "${_ctrl_interface}" ]; then
-	log warn "No WPA Supplicant control interface found, dropping WPA pass-through"
-	return 1
-    fi
-
-    if [ ! -d "${_ctrl_interface}" ]; then
-	log warn "Invalid WPA Supplicant control interface, dropping WPA pass-through"
-	return 1
-    fi
+    # shellcheck disable=SC1090
+    . "${UDS_CONFIG}"
 
     if [ -z "${network}" ]; then
 	_ip=$(find_guest_ip)
@@ -383,53 +361,44 @@ wpa_passthru_start() {
     log info "Found guest IP address: ${_ip}"
 
     if [ -z "${_ip}" ]; then
-	log warn "No guest IP address could be discovered, dropping WPA pass-through"
+	log warn "No guest IP address could be discovered, dropping UDS pass-through"
 	return 1
     fi
 
-    _ctrl_interface_group=$(get_wpa_supplicant_parameter "ctrl_interface_group")
+    log info "Configured sockets: [${sockets}]"
 
-    [ -z "${_ctrl_interface_group}" ] \
-	&& _ctrl_interface_group=$(${STAT} -qf "%g" "${_ctrl_interface}")
-
-    [ -z "${_ctrl_interface_group}" ] \
-        && _ctrl_interface_group=0
-
-    log info "Control interface group: ${_ctrl_interface_group}"
-
-    _wlan_devs=$(set | ${GREP} -F "_port=" | ${SED} 's!_port=.*!!')
-    log info "WLAN devices: [${_wlan_devs}]"
-
-    for _wlan_dev in ${_wlan_devs}; do
-	_wlan=$(${ECHO} "${_wlan_dev}" | ${SED} 's!_!-!g')
-	_ctrl_socket="${_ctrl_interface}/${_wlan}"
-	_port=$(eval "echo \${${_wlan_dev}_port}")
+    for s in ${sockets}; do
+	_path="${s##*path=}"; _path="${_path%%,*}"
+	_port="${s##*port=}"; _port="${_port%%,*}"
+	_user="${s##*user=}"; _user="${_user%%,*}"
+	_group="${s##*group=}"; _group="${_group%%,*}"
+	_mode="${s##*mode=}"; _mode="${_mode%%,*}"
 
 	if [ -z "${_port}" ]; then
-	    log warn "No port defined for ${_wlan}, dropping WPA pass-through"
-	    continue
+           log warn "No port defined for ${_path}, dropping UDS pass-through"
+	   continue
 	fi
 
-	log info "Hooking up ${_ip}:${_port} as ${_ctrl_socket}"
-	${DAEMON} -r -t "${WPA_PASSTHRU_DAEMON_ID}" \
+	log info "Hooking up ${_ip}:${_port} as ${_path} (${_user}:${_group}@${_mode})"
+	${DAEMON} -r -t "${UDS_PASSTHRU_DAEMON_ID}" \
 	    ${SOCAT} \
-	    UNIX-RECVFROM:"${_ctrl_socket}",reuseaddr,fork,unlink-early,user=root,group="${_ctrl_interface_group}",mode=770 \
+	    UNIX-RECVFROM:"${_path}",reuseaddr,fork,unlink-early,user="${_user}",group="${_group}",mode="${_mode}" \
 	    TCP4:"${_ip}":"${_port}" 2>&1 \
 	    | capture_output debug socat &
     done
 }
 
-wpa_passthru_stop() {
+uds_passthru_stop() {
     local _connections
 
-    _connections="$(get_wpa_passthru_connections)"
+    _connections="$(get_uds_passthru_connections)"
+    [ -z "${_connections}" ] && return 0
 
-    log info "Tearing down WPA pass-through"
+    log info "Tearing down Unix Domain Socket pass-through"
     log info "Daemonized socat processes found: [${_connections}]"
 
     # shellcheck disable=SC2086
-    [ -n "${_connections}" ] \
-	&& ${KILL} -TERM ${_connections}
+    ${KILL} -TERM ${_connections}
 }
 
 get_ppt_device() {
@@ -516,14 +485,18 @@ vm_manager() {
     local _tap_bhyve
     local _ppt
     local _tap
-    local _wpa_ctrl_enabled
-    local _wpa_conf_mode
+    local _app_conf
+    local _app_conf_ptr="${CONFDIR}/app_config"
+    local _app_conf_mode
+    local _app_conf_bhyve
     local _grub_bhyve_args
     local _grub_bhyve_exit_code
     local _grub_device_map="${GUEST_ROOT}/device.map"
     local _grub_cfg="${GUEST_ROOT}/grub.cfg"
     local _bhyve_conf="${GUEST_ROOT}/bhyve.conf"
     local _bhyve_args
+    local _bhyve_devs
+    local _slot
     local _bhyve_exit_code
     local _restart
 
@@ -533,8 +506,6 @@ vm_manager() {
     log info "Gathering necessary configuration files for launching the guest"
 
     check_configuration "${CONFDIR}/bhyve.conf"
-    check_configuration "${CONFDIR}/wpa_ctrl.conf"
-    check_configuration "${WPA_CONFDIR}/wpa_supplicant.conf"
 
     cpus=1
     memory=128M
@@ -588,20 +559,6 @@ vm_manager() {
 	exit 5
     fi
 
-    log info "Pulling WPA Supplicant control options from configuration file"
-    _wpa_ctrl_enabled=$(
-	# shellcheck source=./etc/wpa_ctrl.conf.sample
-	. "${CONFDIR}/wpa_ctrl.conf"; ${ECHO} "${enabled}")
-    log debug "wpa_ctrl.enabled=${_wpa_ctrl_enabled}"
-
-    if [ "${_wpa_ctrl_enabled}" = "no" ]; then
-	_wpa_conf_mode=",ro"
-	log info "wpa_supplicant.conf will be mounted read-only"
-    else
-	_wpa_conf_mode=""
-	log info "wpa_supplicant.conf will be mounted writable"
-    fi
-
     log info "Launching guest ${WIFIBOX_VM} from ${GUEST_ROOT} with grub-bhyve"
 
     if [ ! -f "${_grub_cfg}" ]; then
@@ -614,6 +571,29 @@ vm_manager() {
 	exit 4
     fi
 
+    _bhyve_devs="virtio-blk,${DISK_IMAGE}"
+    _bhyve_devs="${_bhyve_devs} virtio-9p,config=${CONFDIR}/appliance,ro"
+    _bhyve_devs="${_bhyve_devs} virtio-9p,var=${RUNDIR}/appliance"
+    _app_conf=$(${READLINK} -f "%Y" ${_app_conf_ptr})
+
+    if [ -n "${_app_conf}" ]; then
+	log info "Application config is found at ${_app_conf}"
+
+	if [ -r "${UDS_CONFIG}" ]; then
+	    _app_conf_mode=""
+	    log info "Application config will be mounted writeable"
+	else
+	    _app_conf_mode=",ro"
+	    log info "Application config will be mounted read-only"
+	fi
+
+	_bhyve_devs="${_bhyve_devs} virtio-9p,app_config=${_app_conf}${_app_conf_mode}"
+    else
+	log info "No application config found, nothing to mount"
+    fi
+
+    log debug "Devices: ${_bhyve_devs}"
+
     _grub_bhyve_args=""
     _grub_bhyve_args="${_grub_bhyve_args} -S -M ${memory}"
     _grub_bhyve_args="${_grub_bhyve_args} -r host ${_nmdm_grub_bhyve}"
@@ -623,7 +603,6 @@ vm_manager() {
 
     log debug "Arguments: ${_grub_bhyve_args}"
     ${GRUB_BHYVE} ${_grub_bhyve_args} 2>&1 | capture_output debug grub-bhyve
-
     _grub_bhyve_exit_code="$?"
 
     if [ "${_grub_bhyve_exit_code}" -ne "0" ]; then
@@ -644,10 +623,13 @@ vm_manager() {
     _bhyve_args="${_bhyve_args} ${_nmdm_bhyve}"
     _bhyve_args="${_bhyve_args} -s 0,hostbridge"
     _bhyve_args="${_bhyve_args} -s 31,lpc"
-    _bhyve_args="${_bhyve_args} -s 4:0,virtio-blk,${DISK_IMAGE}"
-    _bhyve_args="${_bhyve_args} -s 4:1,virtio-9p,config=${CONFDIR},ro"
-    _bhyve_args="${_bhyve_args} -s 4:2,virtio-9p,wpa_config=${WPA_CONFDIR}${_wpa_conf_mode}"
-    _bhyve_args="${_bhyve_args} -s 4:3,virtio-9p,var=${RUNDIR}/appliance"
+    _slot=0
+
+    for dev in ${_bhyve_devs}; do
+	_bhyve_args="${_bhyve_args} -s 4:${_slot},${dev}"
+	_slot=$(${EXPR} ${_slot} + 1)
+    done
+
     _bhyve_args="${_bhyve_args} ${_tap_bhyve}"
     _bhyve_args="${_bhyve_args} ${_passthru_bhyve}"
     _bhyve_args="${_bhyve_args} ${WIFIBOX_VM}"
@@ -720,7 +702,7 @@ wifibox_start() {
     vm_start
     show_progress
 
-    wpa_passthru_start
+    uds_passthru_start
     show_progress
 
     ${ECHO} "OK"
@@ -731,7 +713,7 @@ wifibox_stop() {
     log info "Begin: wifibox stop"
     ${PRINTF} "Stopping wifibox..."
 
-    wpa_passthru_stop
+    uds_passthru_stop
     show_progress
 
     vm_stop
@@ -792,7 +774,7 @@ wifibox_restart() {
     ${PRINTF} "Restarting wifibox..."
 
     if has_flag "${_restart}" "G"; then
-	wpa_passthru_stop
+	uds_passthru_stop
 	show_progress
 	vm_stop
 	show_progress
@@ -826,7 +808,7 @@ wifibox_restart() {
     if has_flag "${_restart}" "G"; then
 	vm_start
 	show_progress
-	wpa_passthru_start
+	uds_passthru_start
 	show_progress
     fi
 
