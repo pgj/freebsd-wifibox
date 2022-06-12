@@ -132,6 +132,7 @@ configurations:
 
 | CPU | Wireless NIC | Model | FreeBSD |
 | :-- | :----------- | :---- | :------ |
+| Intel Core i5-5300U | Intel Wireless 7265 | Lenovo Thinkpad T450 | 13.1-RELEASE |
 | Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 12.3-RELEASE, 13.0-RELEASE, 13.1-RC5, 14-CURRENT (snapshot `20220421-b91a48693a5-254961`) |
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
