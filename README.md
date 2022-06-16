@@ -10,14 +10,16 @@ Wifibox tries to implement as a single easy-to-use software package.
   utilized to run the embedded Linux system.  This helps to achieve
   low resource footprint.
 
-- Configuration files are shared with the host system.  The guest
-  uses `wpa_supplicant(8)` so it is possible to import the host's
-  `wpa_supplicant.conf(5)` file without any changes.
+- Configuration files are shared with the host system.  For example,
+  the guest may either use `wpa_supplicant(8)` or `hostapd(8)` and it
+  is possible to import the host's `wpa_supplicant.conf(5)` and
+  `hostapd.conf(5)` files without any changes.
 
-- When configured, `wpa_supplicant(8)` control sockets could be
-  exposed by the guest, which enables use of related utilities
-  directly from the host, such as `wpa_cli(8)` or `wpa_gui(8)` from
-  the [net/wpa_supplicant_gui] FreeBSD package.
+- When configured by the guest, `wpa_supplicant(8)` or `hostapd(8)`
+  control sockets could be exposed, which enables use of related
+  utilities directly from the host, such as `wpa_cli(8)` or
+  `wpa_gui(8)` from the [net/wpa_supplicant_gui] FreeBSD package, or
+  `hostapd_cli(8)`.
 
 - Everything is shipped in a single FreeBSD package that can be easily
   installed and removed.  It comes with an `rc(8)` system service that
@@ -46,8 +48,8 @@ possible:
   ~256 MB physical memory or less depending on the guest, and some
   disk space available for the guest virtual disk image.
 
-- A supported FreeBSD/amd64 system: 12.3-RELEASE or 13.0-RELEASE.
-  14-CURRENT might work.
+- A supported FreeBSD/amd64 system: 12.3-RELEASE or 13.1-RELEASE.
+  14-CURRENT will also probably work.
 
 - The [bhyve+] port which installs unofficial patches for `bhyve` to
   fill gaps present in the base system.  For FreeBSD 12, this is
@@ -57,9 +59,9 @@ possible:
   package, so the Linux guest could be booted via GRUB 2.
 
 - [socat] or the respective `net/socat` FreeBSD package, through which
-  control sockets for `wpa_supplicant(8)` could be published on the
-  host.  The presence of `socat` is required only if this feature is
-  activated, which is not by default.
+  control sockets for `wpa_supplicant(8)` and `hostapd(8)` could be
+  published on the host.  The presence of `socat` is required only if
+  this feature is activated, which depends on the guest configuration.
 
 ## Installation
 
