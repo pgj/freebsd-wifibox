@@ -512,17 +512,17 @@ vm_manager() {
     passthru=
     console=no
 
+    log info "Pulling bhyve options from configuration file"
+    # shellcheck source=./etc/bhyve.conf.sample
+    . "${CONFDIR}/bhyve.conf"
+
     if [ -f "${_bhyve_conf}" ]; then
-	log info "Pulling bhyve options from guest-specific configuration file"
+	log info "Pulling bhyve options from guest-specific configuration file (overlay)"
 	# shellcheck source=./etc/bhyve.conf.sample
 	. "${_bhyve_conf}"
     else
 	log info "No guest-specific bhyve configuration file found"
     fi
-
-    log info "Pulling bhyve options from configuration file"
-    # shellcheck source=./etc/bhyve.conf.sample
-    . "${CONFDIR}/bhyve.conf"
 
     log debug "cpus=${cpus}, memory=${memory}, passthru=${passthru}, console=${console}"
 
