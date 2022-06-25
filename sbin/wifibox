@@ -283,6 +283,7 @@ create_nmdm() {
     # shellcheck source=./etc/bhyve.conf.sample
     . "${CONFDIR}/bhyve.conf"
 
+    destroy_nmdm
     [ "${console}" != "yes" ] && return 0
 
     log info "Bringing up null-modem devices for console connection"
