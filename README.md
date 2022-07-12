@@ -134,16 +134,16 @@ configurations:
 
 | CPU | Wireless NIC | Model | FreeBSD |
 | :-- | :----------- | :---- | :------ |
+| AMD Ryzen 5 5600G | Intel Wi-Fi 6 AX-200 | ASUS ROG STRIX B550-I GAMING | 13-STABLE, 14-CURRENT |
+| AMD Ryzen 5 5600G | AMD RZ608 Wi-Fi 6E (MediaTek MT7921K) | ASUS ROG STRIX B550-I GAMING | 13-STABLE, 14-CURRENT |
+| AMD Ryzen 7 5700X | Intel Wi-Fi 6 AX-200 | GigaByte X570S | 13-STABLE, 14-CURRENT |
+| AMD Ryzen 7 5700X | AMD RZ608 Wi-Fi 6E (MediaTek MT7921K) | GigaByte X570S | 13-STABLE, 14-CURRENT |
 | Intel Core i5-5300U | Intel Wireless 7265 | Lenovo Thinkpad T450 | 13.1-RELEASE |
 | Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 12.3-RELEASE, 13.1-RELEASE, 14-CURRENT (snapshot `20220617-c692ea40265-256174`) |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
 | Intel Core i7-8565U | Qualcomm Atheros QCA6174 | Dell XPS 9380 | 13-STABLE |
 | Intel Core i7-8650U | Intel(R) Dual Band Wireless AC 8265 | Lenovo Thinkpad T480 | 13.1-RELEASE |
-| AMD Ryzen 5 5600G | Intel Wi-Fi 6 AX-200 | ASUS ROG STRIX B550-I GAMING | 13-STABLE, 14-CURRENT |
-| AMD Ryzen 5 5600G | AMD RZ608 Wi-Fi 6E (MediaTek MT7921K) | ASUS ROG STRIX B550-I GAMING | 13-STABLE, 14-CURRENT |
-| AMD Ryzen 7 5700X | Intel Wi-Fi 6 AX-200 | GigaByte X570S | 13-STABLE, 14-CURRENT |
-| AMD Ryzen 7 5700X | AMD RZ608 Wi-Fi 6E (MediaTek MT7921K) | GigaByte X570S | 13-STABLE, 14-CURRENT |
 
 Feel free to submit a pull request or write an email to have your
 configuration added here!
