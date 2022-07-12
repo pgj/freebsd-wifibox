@@ -134,6 +134,7 @@ configurations:
 
 | CPU | Wireless NIC | Model | FreeBSD |
 | :-- | :----------- | :---- | :------ |
+| AMD A6-9225 | Realtek RTL8821CE | Lenovo IdeaPad 330-15AST | 13.1-RELEASE, 14-CURRENT |
 | AMD Ryzen 5 5600G | Intel Wi-Fi 6 AX-200 | ASUS ROG STRIX B550-I GAMING | 13-STABLE, 14-CURRENT |
 | AMD Ryzen 5 5600G | AMD RZ608 Wi-Fi 6E (MediaTek MT7921K) | ASUS ROG STRIX B550-I GAMING | 13-STABLE, 14-CURRENT |
 | AMD Ryzen 7 5700X | Intel Wi-Fi 6 AX-200 | GigaByte X570S | 13-STABLE, 14-CURRENT |
