@@ -29,7 +29,7 @@ BHYVECTL=	/usr/sbin/bhyvectl
 .endif
 
 .if !defined(VMM_KO)
-VMM_KO=		vmm.ko
+VMM_KO=		/boot/kernel/vmm.ko
 .endif
 
 .if defined(GUEST_MAN)
