@@ -8,3 +8,19 @@ notify 11 {
         match "subsystem"       "Resume";
         action "/etc/rc.resume acpi $notify && %%PREFIX%%/sbin/wifibox restart vmm";
 };
+
+# Alternatively, in certain cases, the recovery action has to be split
+# into stopping the guest on suspend, and then starting it again on
+# resume.
+#
+#notify 11 {
+#        match "system"          "ACPI";
+#        match "subsystem"       "Suspend";
+#        action "/etc/rc.suspend acpi $notify && %%PREFIX%%/sbin/wifibox stop guest";
+#};
+#
+#notify 11 {
+#        match "system"          "ACPI";
+#        match "subsystem"       "Resume";
+#        action "/etc/rc.resume acpi $notify && %%PREFIX%%/sbin/wifibox start guest";
+#};

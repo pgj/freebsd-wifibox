@@ -1,4 +1,4 @@
-.Dd April 23, 2022
+.Dd August 31, 2022
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -7,8 +7,14 @@
 .Sh SYNOPSIS
 .Nm
 .Cm start
+.Oo
+.Cm guest
+.Oc
 .Nm
 .Cm stop
+.Oo
+.Cm guest
+.Oc
 .Nm
 .Cm restart
 .Oo
@@ -199,22 +205,33 @@ can manage the following actions by themselves, but the commands for the
 .Nm
 script itself are listed below for the reference.
 .Bl -tag -width -indent
-.It Cm start
+.It Cm start Oo Cm guest Oc
 Start
 .Nm .
-The
+By default, the
 .Sy wifibox0
-interface is created and the guest is attached to the configured
-PCI wireless network device.  The network interface of the FreeBSD
-driver on the same device must not be configured.
-.It Cm stop
+interface is created and the guest is attached to the configured PCI
+wireless network device.  The network interface of the FreeBSD driver
+on the same device must not be configured.  When the
+.Cm guest
+parameter is given, only the guest is started.  Note that this can
+work only if
+.Sy wifibox0
+networking interface has already been created.
+.It Cm stop Oo Cm guest Oc
 Stop
 .Nm .
-The
+Without the
+.Cm guest
+parameter, the
 .Sy wifibox0
 interface is destroyed and the guest is detached from the configured
 PCI wireless network device.  After that, the FreeBSD driver is free
-to take over the device.
+to take over the device.  When the
+.Cm guest
+parameter is specified, only the guest is stopped, and the
+.Sy wifibox0
+interface is kept alive for later re-use.
 .It Cm restart Oo Cm guest | Cm netif | Cm console | Cm vmm Oc
 Restart
 .Nm ,
@@ -324,6 +341,16 @@ command will not probably work on systems where other
 guests are running in parallel as
 .Xr vmm 4
 kernel module could not be unloaded in such cases.
+.Pp
+The
+.Cm restart vmm
+command may not work properly on some systems and its repeated use can
+cause the PCI device to be lost completely until the next boot.  As a
+workaround, it is worth to use the combination of
+.Cm stop guest
+(on suspend) and
+.Cm start guest
+(on resume) instead.
 .Pp
 The PCI pass-through implementation of
 .Xr bhyve 8

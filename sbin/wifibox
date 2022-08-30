@@ -688,42 +688,92 @@ show_progress() {
     ${PRINTF} "."
 }
 
+has_flag() {
+    local _flags="$1"
+    local _flag="$2"
+
+    ${ECHO} "${_flags}" | ${GREP} -Fq "${_flag}"
+}
+
 wifibox_start() {
+    local _target="$1"
+    local _start
+
     log info "Begin: wifibox start"
+
+    if [ -n "$2" ]; then
+	log error "Too many parameters"
+	exit 1
+    fi
+
+    case ${_target} in
+	guest) _start="G";;
+	"") _start="GN";;
+	*) log error "Unknown target: ${_target}"
+	   exit 1;;
+    esac
+
+    log debug "start=${_start}"
     ${PRINTF} "Starting wifibox..."
-    assert_vm_can_run
 
-    create_bridge
-    show_progress
+    if has_flag "${_start}" "N"; then
+	create_bridge
+	show_progress
+    fi
 
-    create_nmdm
-    show_progress
+    if has_flag "${_start}" "G"; then
+	assert_vm_can_run
 
-    vm_start
-    show_progress
+	create_nmdm
+	show_progress
 
-    uds_passthru_start
-    show_progress
+	vm_start
+	show_progress
+
+	uds_passthru_start
+	show_progress
+    fi
 
     ${ECHO} "OK"
     log info "End: wifibox start"
 }
 
 wifibox_stop() {
+    local _target="$1"
+    local _stop
+
     log info "Begin: wifibox stop"
+
+    if [ -n "$2" ]; then
+	log error "Too many parameters"
+	exit 1
+    fi
+
+    case ${_target} in
+	guest) _stop="G";;
+	"") _stop="GN";;
+	*) log error "Unknown target: ${_target}"
+	   exit 1;;
+    esac
+
+    log debug "stop=${_stop}"
     ${PRINTF} "Stopping wifibox..."
 
-    uds_passthru_stop
-    show_progress
+    if has_flag "${_stop}" "G"; then
+	uds_passthru_stop
+	show_progress
 
-    vm_stop
-    show_progress
+	vm_stop
+	show_progress
 
-    destroy_nmdm
-    show_progress
+	destroy_nmdm
+	show_progress
+    fi
 
-    destroy_bridge
-    show_progress
+    if has_flag "${_stop}" "N"; then
+	destroy_bridge
+	show_progress
+    fi
 
     ${ECHO} "OK"
     log info "End: wifibox stop"
@@ -741,13 +791,6 @@ reload_vmm() {
 
     log info "Reloading vmm.ko"
     ${KLDLOAD} "${VMM_KO}" 2>&1 | capture_output debug kldload
-}
-
-has_flag() {
-    local _flags="$1"
-    local _flag="$2"
-
-    ${ECHO} "${_flags}" | ${GREP} -Fq "${_flag}"
 }
 
 wifibox_restart() {
@@ -873,8 +916,8 @@ wifibox_version() {
 wifibox_usage() {
     ${CAT} <<EOF
 USAGE: ${SCRIPT} ...
-    start
-    stop
+    start [guest]
+    stop [guest]
     restart [guest|netif|console|vmm]
     status
     console
@@ -891,8 +934,8 @@ command="$1"
 shift
 
 case ${command} in
-    start) wifibox_start;;
-    stop) wifibox_stop;;
+    start) wifibox_start "$@";;
+    stop) wifibox_stop "$@";;
     restart) wifibox_restart "$@";;
     status) wifibox_status;;
     console) wifibox_console;;
