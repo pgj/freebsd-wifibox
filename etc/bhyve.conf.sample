@@ -1,14 +1,13 @@
-# These are the default values for launching the bhyve(8) guest.
-# Ideally, there is no need to change them, they are included here
-# only for reference.
+# These are the default values for launching the bhyve(8) guest,
+# please revisit them.
 
 # Number of virtual CPUs allocated for the guest, which determines the
-# count of concurrent execution threads.  The guest may override this
-# setting locally.
+# count of concurrent execution threads.
 cpus=1
 
-# Maximum amount of memory allocated for the guest.  The guest may
-# override (lower) this setting locally.
+# Maximum amount of memory allocated for the guest.  This is rather a
+# conservative default, and it is worth considering to lower this
+# value when possible.
 memory=128M
 
 # Change this to `yes` to activate the nmdm(4)-based console.  Usually

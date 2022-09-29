@@ -105,11 +105,6 @@ files could be installed from the [freebsd-wifibox-alpine] repository.
 - When needed, `device.map` could also be placed there to teach GRUB
   about the virtual disk image.
 
-- It is possible for the guest to modify the bhyve-related
-  configuration options by installing a `bhyve.conf` file.  Its
-  structure should be similar to one shipped with Wifibox itself, but
-  it should be talking about the CPU and memory configuration only.
-
 The `BHYVE`, `BHYVECTL`, and `VMM_KO` variables give the location of
 the `bhyve`, `bhyvectl` binaries, and the `vmm.ko` kernel module
 respectively.  By default, these are the ones in the base system
