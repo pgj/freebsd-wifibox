@@ -3,15 +3,16 @@
 # PROVIDE: wifibox
 # BEFORE: netif
 # REQUIRE: FILESYSTEMS sysctl kld
-# KEYWORD: shutdown nojail
+# KEYWORD: shutdown nojail suspend resume
 
 . /etc/rc.subr
 
 : ${wifibox_enable="NO"}
 
 name=wifibox
-desc="Start and stop wifibox on boot and shutdown"
+desc="Manage wifibox on boot, shutdown, suspend, and resume"
 rcvar=wifibox_enable
+extra_commands="suspend resume"
 
 load_rc_config ${name}
 
@@ -19,5 +20,7 @@ command="%%PREFIX%%/sbin/${name}"
 start_cmd="${command} start"
 stop_cmd="${command} stop"
 status_cmd="${command} status"
+suspend_cmd="%%SUSPEND_CMD%%"
+resume_cmd="%%RESUME_CMD%%"
 
 run_rc_command "$1"

@@ -85,7 +85,8 @@ mostly recommended for development and testing.
     GUEST_MAN=<guest manual page location> \
     BHYVE=<bhyve binary location> \
     BHYVECTL=<bhyvectl binary location> \
-    VMM_KO=<vmm kernel module location>
+    VMM_KO=<vmm kernel module location> \
+    RECOVERY_METHOD=<method to use on suspend and resume>
 ```
 
 By default, `PREFIX` is set to `/usr/local`.  In addition to that, it
@@ -112,6 +113,15 @@ respectively.  By default, these are the ones in the base system
 systems, due to lack of support for VirtFS/9P file system passthrough
 or missing fixes.  If [bhyve+] is installed, this is the way to hook
 it up.
+
+The `RECOVERY_METHOD` variable can be used to tell in which way
+Wifibox should be revived on a suspend/resume pair of events.  The
+default value is `restart_vmm`, which means that guest will be
+stopped, and the `vmm(4)` kernel module will be reloaded then the
+guest will be restarted on resume.  Another option is `suspend_guest`,
+which will stop only the guest on suspend and then start it again on
+resume.  The recovery mechanism itself could be disabled by setting
+this value to be empty.
 
 ## Documentation
 

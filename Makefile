@@ -1,6 +1,7 @@
 PREFIX?=/usr/local
 LOCALBASE?=/usr/local
 GUEST_ROOT?=$(LOCALBASE)/share/wifibox
+RECOVERY_METHOD?=restart_vmm
 
 BINDIR=$(DESTDIR)$(PREFIX)/sbin
 ETCDIR=$(DESTDIR)$(PREFIX)/etc
@@ -45,6 +46,17 @@ SUB_LIST=	PREFIX=$(PREFIX) \
 		BHYVECTL=$(BHYVECTL) \
 		VMM_KO=$(VMM_KO) \
 		GUEST_ROOT=$(GUEST_ROOT)
+
+.if ${RECOVERY_METHOD} == restart_vmm
+SUB_LIST+=	SUSPEND_CMD=/usr/bin/true \
+		RESUME_CMD='$${command} restart vmm'
+.elif ${RECOVERY_METHOD} == suspend_guest
+SUB_LIST+=	SUSPEND_CMD='$${command} stop guest' \
+		RESUME_CMD='$${command} start guest'
+.else
+SUB_LIST+=	SUSPEND_CMD=/usr/bin/true \
+		RESUME_CMD=/usr/bin/true
+.endif
 
 _SUB_LIST_EXP= 	${SUB_LIST:S/$/!g/:S/^/ -e s!%%/:S/=/%%!/}
 

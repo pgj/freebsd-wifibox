@@ -1,26 +1,11 @@
-# This is a `devd(8)` configuration file to run the resume action of
-# wifibox on the ACPI resume event.  Review the contents and create a
-# copy of it without the `.sample` extension to use it.  Restart the
-# `devd` service once the file has been created.
-
+# This is a shim `devd(8)` configuration file to implement calling the
+# `wifibox` service on `suspend` because that is not supported by the
+# base system.  Review the contents and create a copy of it without
+# the `.sample` extension to use it.  Restart the `devd` service once
+# the file has been created.
+#
 notify 11 {
         match "system"          "ACPI";
-        match "subsystem"       "Resume";
-        action "/etc/rc.resume acpi $notify && %%PREFIX%%/sbin/wifibox restart vmm";
+        match "subsystem"       "Suspend";
+        action "/etc/rc.suspend acpi $notify && service wifibox suspend";
 };
-
-# Alternatively, in certain cases, the recovery action has to be split
-# into stopping the guest on suspend, and then starting it again on
-# resume.
-#
-#notify 11 {
-#        match "system"          "ACPI";
-#        match "subsystem"       "Suspend";
-#        action "/etc/rc.suspend acpi $notify && %%PREFIX%%/sbin/wifibox stop guest";
-#};
-#
-#notify 11 {
-#        match "system"          "ACPI";
-#        match "subsystem"       "Resume";
-#        action "/etc/rc.resume acpi $notify && %%PREFIX%%/sbin/wifibox start guest";
-#};

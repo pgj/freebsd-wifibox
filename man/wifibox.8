@@ -1,4 +1,4 @@
-.Dd August 31, 2022
+.Dd September 30, 2022
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -59,14 +59,7 @@ files provided in the
 directory and follow the instructions to create a working configuration,
 otherwise
 .Nm
-will refuse to start.  For systems that might be put in sleep mode,
-e.g. laptops, there is a sample
-.Xr devd.conf 5
-configuration file in the
-.Pa %%PREFIX%%/etc/devd
-directory that can be used to restart
-.Nm
-on resume.
+will refuse to start.
 .Pp
 By default, PCI pass-through is disabled for AMD-based hardware, hence
 it must be explicitly enabled via the corresponding
@@ -188,11 +181,14 @@ otherwise the link will stop working.
 # service netif start
 .Ed
 .Pp
-If the
+In addition to that, because a
 .Xr devd.conf 5
-file is installed,
+file is installed as part of the application,
 .Xr devd 8
 must be restarted so the additional configuration file can be read.
+These bits are responsible to managing the recovery in case of
+suspend/resume events.  When this feature is not in use, this step
+may be omitted.
 .Bd -literal -offset indent
 # service devd restart
 .Ed
