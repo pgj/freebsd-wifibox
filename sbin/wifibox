@@ -787,12 +787,20 @@ reload_vmm() {
 wifibox_restart() {
     local _target="$1"
     local _restart
+    local _pid
 
     log info "Begin: wifibox restart"
 
     if [ -n "$2" ]; then
 	log error "Too many parameters"
 	exit 1
+    fi
+
+    _pid="$(get_vm_manager_pid)"
+
+    if [ -z "${_pid}" ]; then
+	log warn "No running instance found that could be restarted"
+	return 1
     fi
 
     case ${_target} in
