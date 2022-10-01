@@ -868,7 +868,7 @@ wifibox_status() {
     if [ -n "${_pid}" ]; then
 	output "wifibox is run by PID ${_pid}"
     else
-	log error "wifibox is not run"
+	output "wifibox is not run"
 	return 1
     fi
 
