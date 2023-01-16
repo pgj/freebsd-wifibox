@@ -7,5 +7,5 @@
 notify 11 {
         match "system"          "ACPI";
         match "subsystem"       "Suspend";
-        action "/etc/rc.suspend acpi $notify && service wifibox suspend";
+        action "service wifibox suspend && /etc/rc.suspend acpi $notify";
 };

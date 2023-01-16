@@ -150,6 +150,7 @@ configurations:
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
 | Intel Core i7-8565U | Qualcomm Atheros QCA6174 | Dell XPS 9380 | 13-STABLE |
 | Intel Core i7-8650U | Intel(R) Dual Band Wireless AC 8265 | Lenovo Thinkpad T480 | 13.1-RELEASE |
+| Intel Core i7-1165G7 | Intel(R) Wi-Fi 6 AX210 | Framework Laptop (Gen 1, Batch 6) | 13-STABLE |
 
 Feel free to submit a pull request or write an email to have your
 configuration added here!
