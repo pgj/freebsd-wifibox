@@ -1,0 +1,84 @@
+name: Bug report
+description: Tell if something is not working.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      value: |
+        A clear and concise description of what the problem is.  What
+        is expected from the application?
+    validations:
+      required: true
+  - type: textarea
+    id: configuration-os
+    attributes:
+      render: shell
+      label: Host operating system
+      value: |
+        Output of `uname -a`.
+    validations:
+      required: true
+  - type: textarea
+    id: configuration-wireless-nic
+    attributes:
+      render: shell
+      label: Wireless NIC
+      value: |
+        Relevant output of `pciconf -lv`.
+    validations:
+      required: true
+  - type: textarea
+    id: configuration-wifibox
+    attributes:
+      render: shell
+      label: Wifibox version
+      value: |
+        Output of `wifibox version`.  Note that only the latest
+        version is supported.
+    validations:
+      required: true
+  - type: textarea
+    id: configuration-image
+    attributes:
+      label: Disk image type and version
+      value: |
+        The kind of VM image in use, e.g. Wifibox/Alpine, and its
+        version.
+    validations:
+      required: true
+  - type: textarea
+    id: configuration-extra
+    attributes:
+      render: shell
+      label: Changes to the default configuration files
+      value: |
+        Include relevant sections from all the configuration files
+        that contain local changes and may help to reproduce the
+        problem.
+  - type: textarea
+    id: logs
+    attributes:
+      render: shell
+      label: Logs
+      value: |
+        Please copy and paste any relevant log output from the
+        following sources:
+
+        - /var/log/wifibox.log (with DEBUG logging verbosity)
+        - /var/run/wifibox/appliance/log/dmesg
+        - /var/run/wifibox/appliance/log/messages
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      value: |
+        Add any other context about the problem here that might help
+        the investigation.
