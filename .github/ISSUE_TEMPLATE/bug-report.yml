@@ -11,8 +11,7 @@ body:
     attributes:
       label: Description
       value: |
-        A clear and concise description of what the problem is.  What
-        is expected from the application?
+        A clear and concise description of what the problem is.  What is expected from the application?
     validations:
       required: true
   - type: textarea
@@ -39,8 +38,7 @@ body:
       render: shell
       label: Wifibox version
       value: |
-        Output of `wifibox version`.  Note that only the latest
-        version is supported.
+        Output of `wifibox version`.  Note that only the latest version is supported.
     validations:
       required: true
   - type: textarea
@@ -48,8 +46,7 @@ body:
     attributes:
       label: Disk image type and version
       value: |
-        The kind of VM image in use, e.g. Wifibox/Alpine, and its
-        version.
+        The kind of VM image in use, e.g. Wifibox/Alpine, and its version.
     validations:
       required: true
   - type: textarea
@@ -58,17 +55,14 @@ body:
       render: shell
       label: Changes to the default configuration files
       value: |
-        Include relevant sections from all the configuration files
-        that contain local changes and may help to reproduce the
-        problem.
+        Include relevant sections from all the configuration files that contain local changes and may help to reproduce the problem.
   - type: textarea
     id: logs
     attributes:
       render: shell
       label: Logs
       value: |
-        Please copy and paste any relevant log output from the
-        following sources:
+        Please copy and paste any relevant log output from the following sources:
 
         - /var/log/wifibox.log (with DEBUG logging verbosity)
         - /var/run/wifibox/appliance/log/dmesg
@@ -80,19 +74,13 @@ body:
     attributes:
       label: Additional context
       value: |
-        Add any other context about the problem here that might help
-        the investigation.
+        Add any other context about the problem here that might help the investigation.
   - type: checkboxes
     id: documentation
     attributes:
       label: Have you tried to turn it on and off?
       description: |
-        I declare that I have spent considerable amount of time on
-        reading through the `wifibox(8)` and `wifibox-guest(5)` manual
-        pages before creating this ticket.  I will not ask about
-        things that are clearly documented there.  Maintainers reserve
-        the right to leave such issues unanswered or close them
-        immediately.  Thank you for saving them the time.
+        I declare that I have spent considerable amount of time on reading through the `wifibox(8)` and `wifibox-guest(5)` manual pages before creating this ticket.  I will not ask about things that are clearly documented there.  Maintainers reserve the right to leave such issues unanswered or close them immediately.  Thank you for saving them the time.
       options:
         - label: Yes, I have read all the manual pages first!
           required: true
