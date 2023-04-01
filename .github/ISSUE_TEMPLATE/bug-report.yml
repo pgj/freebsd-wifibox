@@ -82,3 +82,17 @@ body:
       value: |
         Add any other context about the problem here that might help
         the investigation.
+  - type: checkboxes
+    id: documentation
+    attributes:
+      label: Have you tried to turn it on and off?
+      description: |
+        I declare that I have spent considerable amount of time on
+        reading through the `wifibox(8)` and `wifibox-guest(5)` manual
+        pages before creating this ticket.  I will not ask about
+        things that are clearly documented there.  Maintainers reserve
+        the right to leave such issues unanswered or close them
+        immediately.  Thank you for saving them the time.
+      options:
+        - label: Yes, I have read all the manual pages first!
+          required: true
