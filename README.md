@@ -48,7 +48,7 @@ possible:
   ~256 MB physical memory or less depending on the guest, and some
   disk space available for the guest virtual disk image.
 
-- A supported FreeBSD/amd64 system: 12.4-RELEASE or 13.1-RELEASE.
+- A supported FreeBSD/amd64 system: 12.4-RELEASE or 13.2-RELEASE.
   14-CURRENT will also probably work.
 
 - The [bhyve+] port which installs unofficial patches for `bhyve` to
