@@ -6,7 +6,7 @@ been guides on the Internet to suggest the use of such techniques to
 improve the wireless networking experience on FreeBSD, of which
 Wifibox tries to implement as a single easy-to-use software package.
 
-- [bhyve], a lightweight virtualization solution for FreeBSD, is
+- [`bhyve`], a lightweight virtualization solution for FreeBSD, is
   utilized to run the embedded Linux system.  This helps to achieve
   low resource footprint.
 
@@ -18,7 +18,7 @@ Wifibox tries to implement as a single easy-to-use software package.
 - When configured by the guest, `wpa_supplicant(8)` or `hostapd(8)`
   control sockets could be exposed, which enables use of related
   utilities directly from the host, such as `wpa_cli(8)` or
-  `wpa_gui(8)` from the [net/wpa_supplicant_gui] FreeBSD package, or
+  `wpa_gui(8)` from the [`net/wpa_supplicant_gui`] FreeBSD package, or
   `hostapd_cli(8)`.
 
 - Everything is shipped in a single FreeBSD package that can be easily
@@ -41,7 +41,7 @@ Before the installation, please check if those items are present on
 the target computer otherwise running the software might not be
 possible:
 
-- A CPU that is supported by [bhyve] PCI pass-through (I/O MMU) with
+- A CPU that is supported by [`bhyve`] PCI pass-through (I/O MMU) with
   ~256 MB physical memory or less depending on the guest, and some
   disk space available for the guest virtual disk image.
 
@@ -53,11 +53,11 @@ possible:
 - A supported FreeBSD/amd64 system: 12.4-RELEASE or 13.2-RELEASE.
   14-CURRENT will also probably work.
 
-- The [bhyve+] port which installs unofficial patches for `bhyve` to
+- The [`bhyve+`] port which installs unofficial patches for `bhyve` to
   fill gaps present in the base system.  For FreeBSD 12, this is
   mandatory, but it may come handy on newer systems as well.
 
-- [grub2-bhyve] or the corresponding `sysutils/grub2-bhyve` FreeBSD
+- [`grub2-bhyve`] or the corresponding `sysutils/grub2-bhyve` FreeBSD
   package, so the Linux guest could be booted via GRUB 2.
 
 - [socat] or the respective `net/socat` FreeBSD package, through which
@@ -68,7 +68,7 @@ possible:
 ## Installation
 
 Use the `net/wifibox` FreeBSD port which is available at the
-[freebsd-wifibox-port] repository and automatically takes care of all
+[`freebsd-wifibox-port`] repository and automatically takes care of all
 the following details, installs a guest image, and offers proper
 removal of the installed files, hence it is a more convenient way to
 manage the whole installation process.
@@ -99,7 +99,8 @@ different.
 The `GUEST_ROOT` variable should point to the directory that houses
 the files related to the guest.  Note that these are not part of the
 repository and should be installed individually.  For example, such
-files could be installed from the [freebsd-wifibox-alpine] repository.
+files could be installed from the [`freebsd-wifibox-alpine`]
+repository.
 
 - GRUB is going to be configured according to the contents of
   `grub.cfg`, and then the system is booted from the virtual disk
@@ -113,7 +114,7 @@ the `bhyve`, `bhyvectl` binaries, and the `vmm.ko` kernel module
 respectively.  By default, these are the ones in the base system
 (i.e. `/usr/sbin/bhyve`) but they might be insufficient on older
 systems, due to lack of support for VirtFS/9P file system passthrough
-or missing fixes.  If [bhyve+] is installed, this is the way to hook
+or missing fixes.  If [`bhyve+`] is installed, this is the way to hook
 it up.
 
 The `RECOVERY_METHOD` variable can be used to tell in which way
@@ -158,11 +159,11 @@ configurations:
 Feel free to submit a pull request or write an email to have your
 configuration added here!
 
-[bhyve]: https://wiki.freebsd.org/bhyve
+[`bhyve`]: https://wiki.freebsd.org/bhyve
 [Message Signaled Interrupts]: https://www.kernel.org/doc/Documentation/PCI/MSI-HOWTO.txt
-[bhyve+]: https://github.com/pgj/freebsd-bhyve-plus-port/
-[freebsd-wifibox-port]: https://github.com/pgj/freebsd-wifibox-port
-[freebsd-wifibox-alpine]: https://github.com/pgj/freebsd-wifibox-alpine
-[net/wpa_supplicant_gui]: https://cgit.freebsd.org/ports/tree/net/wpa_supplicant_gui
-[grub2-bhyve]: https://github.com/grehan-freebsd/grub2-bhyve
-[socat]: http://www.dest-unreach.org/socat/
+[`bhyve+`]: https://github.com/pgj/freebsd-bhyve-plus-port/
+[`freebsd-wifibox-port`]: https://github.com/pgj/freebsd-wifibox-port
+[`freebsd-wifibox-alpine`]: https://github.com/pgj/freebsd-wifibox-alpine
+[`net/wpa_supplicant_gui`]: https://cgit.freebsd.org/ports/tree/net/wpa_supplicant_gui
+[`grub2-bhyve`]: https://github.com/grehan-freebsd/grub2-bhyve
+[`socat`]: http://www.dest-unreach.org/socat/
