@@ -41,12 +41,14 @@ Before the installation, please check if those items are present on
 the target computer otherwise running the software might not be
 possible:
 
-- A PCI wireless card that is known to be supported by the recent
-  Linux versions, but it is not performing well enough under FreeBSD.
-
 - A CPU that is supported by [bhyve] PCI pass-through (I/O MMU) with
   ~256 MB physical memory or less depending on the guest, and some
   disk space available for the guest virtual disk image.
+
+- A PCI wireless card that is known to be supported by the recent
+  Linux versions, but it is not performing well enough under FreeBSD.
+  Also, the Linux driver has to support [Message Signaled Interrupts]
+  (MSI) because that is required for the PCI pass-through to work.
 
 - A supported FreeBSD/amd64 system: 12.4-RELEASE or 13.2-RELEASE.
   14-CURRENT will also probably work.
@@ -157,6 +159,7 @@ Feel free to submit a pull request or write an email to have your
 configuration added here!
 
 [bhyve]: https://wiki.freebsd.org/bhyve
+[Message Signaled Interrupts]: https://www.kernel.org/doc/Documentation/PCI/MSI-HOWTO.txt
 [bhyve+]: https://github.com/pgj/freebsd-bhyve-plus-port/
 [freebsd-wifibox-port]: https://github.com/pgj/freebsd-wifibox-port
 [freebsd-wifibox-alpine]: https://github.com/pgj/freebsd-wifibox-alpine
