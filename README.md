@@ -149,6 +149,7 @@ configurations:
 | AMD Ryzen 7 5700X | Intel Wi-Fi 6 AX-200 | GigaByte X570S | 13-STABLE, 14-CURRENT |
 | AMD Ryzen 7 5700X | AMD RZ608 Wi-Fi 6E (MediaTek MT7921K) | GigaByte X570S | 13-STABLE, 14-CURRENT |
 | AMD Ryzen 7 5825U | Realtek RTL8852BE | HP Laptop 15s-eq3636nz | 13.2-RC3 |
+| Intel Core i5-3210M | Broadcom BCM4331 | Apple MacBook Pro A1278 | 13.2-RELEASE |
 | Intel Core i5-5300U | Intel Wireless 7265 | Lenovo Thinkpad T450 | 13.1-RELEASE |
 | Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 12.4-RELEASE, 13.1-RELEASE, 14-CURRENT (snapshot `20220617-c692ea40265-256174`) |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
