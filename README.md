@@ -118,13 +118,18 @@ or missing fixes.  If [`bhyve+`] is installed, this is the way to hook
 it up.
 
 The `RECOVERY_METHOD` variable can be used to tell in which way
-Wifibox should be revived on a suspend/resume pair of events.  The
-default value is `restart_vmm`, which means that guest will be
-stopped, and the `vmm(4)` kernel module will be reloaded then the
-guest will be restarted on resume.  Another option is `suspend_guest`,
-which will stop only the guest on suspend and then start it again on
-resume.  The recovery mechanism itself could be disabled by setting
-this value to be empty.
+Wifibox should be revived on a suspend/resume pair of events.
+
+- The default value is `restart_vmm`, which means that guest will be
+  stopped, and the `vmm(4)` kernel module will be reloaded then the
+  guest will be restarted on resume.
+- Another option is `suspend_guest`, which will stop the only guest on
+  suspend and then start it again on resume.
+- Finally, there is `suspend_vmm`, which will stop both the guest and
+  unload the `vmm(4)` kernel module on suspend and implement the
+  reverse on resume.
+- The recovery mechanism itself could be disabled by setting this
+  value to be empty.
 
 ## Documentation
 

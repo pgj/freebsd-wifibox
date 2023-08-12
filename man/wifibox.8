@@ -1,4 +1,4 @@
-.Dd September 30, 2022
+.Dd September 13, 2023
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -8,12 +8,12 @@
 .Nm
 .Cm start
 .Oo
-.Cm guest
+.Cm guest | Cm netif | Cm console | Cm vmm
 .Oc
 .Nm
 .Cm stop
 .Oo
-.Cm guest
+.Cm guest | Cm netif | Cm console | Cm vmm
 .Oc
 .Nm
 .Cm restart
@@ -197,24 +197,50 @@ The
 .Nm
 system service and
 .Xr devd 8
-can manage the following actions by themselves, but the commands for the
+can manage the following actions by themselves, but the commands for
+the
 .Nm
 script itself are listed below for the reference.
+.Pp
+For the
+.Cm start,
+.Cm stop,
+and
+.Cm restart
+commands, it is possible to specify a target, therefore limit the
+scope of the operation in different ways.
+.Bl -tag -width "console"
+.It Cm guest
+Guest only, maintain the console device and the networking interface.
+.It Cm netif
+Networking interface and guest.  That latter is required because the
+networking interface is bound to the virtual machine that runs the
+guest.
+.It Cm console
+Null-modem device and guest.  That latter is required because the
+null-modem device is bound to the virtual machine that runs the guest.
+.It Cm vmm
+The
+.Xr vmm 4
+kernel module, maintain the console device and the networking
+interface.
+.El
+.Pp
+The commands are as follows.
 .Bl -tag -width -indent
-.It Cm start Oo Cm guest Oc
+.It Cm start Oo Cm guest | Cm netif | Cm console | Cm vmm Oc
 Start
 .Nm .
 By default, the
 .Sy wifibox0
 interface is created and the guest is attached to the configured PCI
 wireless network device.  The network interface of the FreeBSD driver
-on the same device must not be configured.  When the
+on the same device must not be configured.  Note that the
 .Cm guest
-parameter is given, only the guest is started.  Note that this can
-work only if
+target can work only if
 .Sy wifibox0
 networking interface has already been created.
-.It Cm stop Oo Cm guest Oc
+.It Cm stop Oo Cm guest | Cm netif | Cm console | Cm vmm Oc
 Stop
 .Nm .
 Without the
@@ -223,11 +249,7 @@ parameter, the
 .Sy wifibox0
 interface is destroyed and the guest is detached from the configured
 PCI wireless network device.  After that, the FreeBSD driver is free
-to take over the device.  When the
-.Cm guest
-parameter is specified, only the guest is stopped, and the
-.Sy wifibox0
-interface is kept alive for later re-use.
+to take over the device.
 .It Cm restart Oo Cm guest | Cm netif | Cm console | Cm vmm Oc
 Restart
 .Nm ,
@@ -235,30 +257,24 @@ which is the sequential composition of the
 .Cm stop
 and
 .Cm start
-commands by default.  It is possible to specify a target, therefore
-limit the scope of this operation in different ways.
-.Bl -tag -width "console"
-.It Cm guest
-Restart the guest only, maintain the console device and the networking
-interface.  This is recommended for applying system-level updates to
-the guest.
-.It Cm netif
-Recreate the networking interface and restart the guest.  That latter
-is required because the networking interface is bound to the virtual
-machine that runs the guest.
-.It Cm console
-Recreate the null-modem device and restart the guest.  That latter is
-required because the null-modem device is bound to the virtual machine
-that runs the guest.  This is recommended when the console support is
-turned on in the configuration.
-.It Cm vmm
-Restart the guest while reloading the
+commands by default. The
+.Cm guest
+parameter is for the guest only.  This is recommended for applying
+system-level updates to the guest. The
+.Cm netif
+parameter is to recreate the networking interface and restart the
+guest.  The
+.Cm console
+parameter recreate the null-modem device and restarts the guest.  This
+is recommended when the console support is turned on in the
+configuration.  The
+.Cm vmm
+parameter is to restart the guest while reloading the
 .Xr vmm 4
 kernel module, maintain the console device and the networking
 interface.  This is a workaround for the guest to recover from a state
 where the wireless device becomes unresponsive after the ACPI resume
 event.
-.El
 .It Cm status
 Check and display if
 .Nm
@@ -346,7 +362,13 @@ workaround, it is worth to use the combination of
 .Cm stop guest
 (on suspend) and
 .Cm start guest
-(on resume) instead.
+(on resume) instead.  In some other cases, it is better to unload the
+.Xr vmm 4
+kernel module to suspend with the
+.Cm stop vmm
+command, and then load it again on resume by the
+.Cm start vmm
+command.
 .Pp
 The PCI pass-through implementation of
 .Xr bhyve 8

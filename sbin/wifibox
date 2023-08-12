@@ -699,16 +699,28 @@ wifibox_start() {
 
     case ${_target} in
 	guest) _start="G";;
-	"") _start="GN";;
-	*) log error "Unknown target: ${_target}"
+	""|netif) _start="GN";;
+	console) _start="GM";;
+	vmm) _start="GV";;
+	*) log error "Unknown target: ${_target} (supported: guest, netif, console, vmm)"
 	   exit 1;;
     esac
 
     log debug "start=${_start}"
     ${PRINTF} "Starting wifibox..."
 
+    if has_flag "${_start}" "V"; then
+	load_vmm
+	show_progress
+    fi
+
     if has_flag "${_start}" "N"; then
 	create_bridge
+	show_progress
+    fi
+
+    if has_flag "${_start}" "M"; then
+	create_nmdm
 	show_progress
     fi
 
@@ -742,8 +754,10 @@ wifibox_stop() {
 
     case ${_target} in
 	guest) _stop="G";;
-	"") _stop="GN";;
-	*) log error "Unknown target: ${_target}"
+	""|netif) _stop="GN";;
+	console) _stop="GM";;
+	vmm) _stop="GV";;
+	*) log error "Unknown target: ${_target} (supported: guest, netif, console, vmm)"
 	   exit 1;;
     esac
 
@@ -761,8 +775,18 @@ wifibox_stop() {
 	show_progress
     fi
 
+    if has_flag "${_stop}" "M"; then
+	destroy_nmdm
+	show_progress
+    fi
+
     if has_flag "${_stop}" "N"; then
 	destroy_bridge
+	show_progress
+    fi
+
+    if has_flag "${_stop}" "V"; then
+	unload_vmm
 	show_progress
     fi
 
@@ -772,16 +796,23 @@ wifibox_stop() {
 
 # This is a workaround to recover from the unfortunate state of the
 # wireless device after resume.
-reload_vmm() {
+load_vmm() {
+    log info "Reloading vmm.ko"
+    ${KLDLOAD} "${VMM_KO}" 2>&1 | capture_output debug kldload
+}
+
+unload_vmm() {
     log info "Unloading vmm.ko"
 
     if ! (${KLDUNLOAD} vmm 2>&1 | capture_output debug kldunload); then
 	log error "Some other bhyve guests might be running, vmm.ko could not be unloaded"
 	exit 127
     fi
+}
 
-    log info "Reloading vmm.ko"
-    ${KLDLOAD} "${VMM_KO}" 2>&1 | capture_output debug kldload
+reload_vmm() {
+    unload_vmm
+    load_vmm
 }
 
 wifibox_restart() {
@@ -808,7 +839,7 @@ wifibox_restart() {
 	""|netif) _restart="GN";;
 	console) _restart="GM";;
 	vmm) _restart="GV";;
-	*) log error "Unknown target: ${_target}"
+	*) log error "Unknown target: ${_target} (supported: guest, netif, console, vmm)"
 	   exit 1;;
     esac
 
@@ -915,8 +946,8 @@ wifibox_version() {
 wifibox_usage() {
     ${CAT} <<EOF
 USAGE: ${SCRIPT} ...
-    start [guest]
-    stop [guest]
+    start [guest|netif|console|vmm]
+    stop [guest|netif|console|vmm]
     restart [guest|netif|console|vmm]
     status
     console

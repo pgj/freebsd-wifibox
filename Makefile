@@ -53,6 +53,9 @@ SUB_LIST+=	SUSPEND_CMD=/usr/bin/true \
 .elif ${RECOVERY_METHOD} == suspend_guest
 SUB_LIST+=	SUSPEND_CMD='$${command} stop guest' \
 		RESUME_CMD='$${command} start guest'
+.elif ${RECOVERY_METHOD} == suspend_vmm
+SUB_LIST+=	SUSPEND_CMD='$${command} stop vmm' \
+		RESUME_CMD='$${command} start vmm'
 .else
 SUB_LIST+=	SUSPEND_CMD=/usr/bin/true \
 		RESUME_CMD=/usr/bin/true
