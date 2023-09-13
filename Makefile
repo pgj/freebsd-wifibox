@@ -16,6 +16,7 @@ CP=/bin/cp
 CHMOD=/bin/chmod
 GZIP=/usr/bin/gzip
 GIT=$(LOCALBASE)/bin/git
+SHELLCHECK=$(LOCALBASE)/bin/shellcheck
 
 .if !defined(VERSION)
 VERSION!=	$(GIT) describe --tags --always
@@ -62,10 +63,11 @@ SUB_LIST+=	SUSPEND_CMD=/usr/bin/true \
 .endif
 
 _SUB_LIST_EXP= 	${SUB_LIST:S/$/!g/:S/^/ -e s!%%/:S/=/%%!/}
+_SCRIPT_SRC=	sbin/wifibox
 
 install:
 	$(MKDIR) -p $(BINDIR)
-	$(SED) ${_SUB_LIST_EXP} sbin/wifibox > $(BINDIR)/wifibox
+	$(SED) ${_SUB_LIST_EXP} ${_SCRIPT_SRC} > $(BINDIR)/wifibox
 	$(CHMOD) 555 $(BINDIR)/wifibox
 
 	$(MKDIR) -p $(ETCDIR)/wifibox
@@ -85,3 +87,6 @@ install:
 .MAIN: clean
 
 clean: ;
+
+shellcheck:
+	@$(SHELLCHECK) -x ${_SCRIPT_SRC}
