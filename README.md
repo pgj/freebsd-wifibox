@@ -60,10 +60,11 @@ possible:
 - [`grub2-bhyve`] or the corresponding `sysutils/grub2-bhyve` FreeBSD
   package, so the Linux guest could be booted via GRUB 2.
 
-- [socat] or the respective `net/socat` FreeBSD package, through which
-  control sockets for `wpa_supplicant(8)` and `hostapd(8)` could be
-  published on the host.  The presence of `socat` is required only if
-  this feature is activated, which depends on the guest configuration.
+- [`socat`] or the respective `net/socat` FreeBSD package, through
+  which control sockets for `wpa_supplicant(8)` and `hostapd(8)` could
+  be published on the host.  The presence of `socat` is required only
+  if this feature is activated, which depends on the guest
+  configuration.
 
 ## Installation
 
