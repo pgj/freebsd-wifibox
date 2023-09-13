@@ -381,7 +381,7 @@ uds_passthru_start() {
 
 	log info "Hooking up ${_ip}:${_port} as ${_path} (${_user}:${_group}@${_mode})"
 	${DAEMON} -r -t "${UDS_PASSTHRU_DAEMON_ID}" \
-	    ${SOCAT} \
+	    "${SOCAT}" \
 	    UNIX-RECVFROM:"${_path}",reuseaddr,fork,unlink-early,user="${_user}",group="${_group}",mode="${_mode}" \
 	    TCP4:"${_ip}":"${_port}" 2>&1 \
 	    | capture_output debug socat &
