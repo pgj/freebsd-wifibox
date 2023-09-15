@@ -1,4 +1,4 @@
-.Dd September 13, 2023
+.Dd September 15, 2023
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -121,10 +121,10 @@ service can be then started up as follows.
 .Pp
 After
 .Nm
-started successfully, the IP address for the corresponding networking
-interface needs to be configured in
+started successfully, IP addresses for the corresponding networking
+interface need to be configured in
 .Xr rc.conf 5 .
-For example, assignment of a dynamic IP address can be requested by
+For example, assignment of a dynamic IPv4 address can be requested by
 adding this line below.
 .Bd -literal -offset indent
 ifconfig_wifibox0="SYNCDHCP"
@@ -133,17 +133,17 @@ ifconfig_wifibox0="SYNCDHCP"
 In addition to this, to reduce boot times,
 .Xr dhclient 8
 can be instructed to run in the background and not to wait for a
-positive link and issuing an IP address after it has been launched.
+positive link and issuing an IPv4 address after it has been launched.
 .Bd -literal -offset indent
 background_dhclient_wifibox0="YES"
 defaultroute_delay="0"
 .Ed
 .Pp
-If preferred, static IP address configuration is possible with this
+If preferred, static IPv4 address configuration is possible with this
 method.  Assume that
 .Sy wifibox0
 is configured as 10.0.0.1/24 on the guest's side, and the host wants
-to use the 10.0.0.2/24 IP address.
+to use the 10.0.0.2/24 IPv4 address.
 .Bd -literal -offset indent
 defaultrouter="10.0.0.1"
 ifconfig_wifibox0="inet 10.0.0.2/24"
@@ -158,11 +158,18 @@ service.
 # service netif start wifibox0
 .Ed
 .Pp
-For static IP address configurations, the
+For static IPv4 address configurations, the
 .Nm routing
 service has to be restarted as well.
 .Bd -literal -offset indent
 # service routing restart
+.Ed
+.Pp
+In case of IPv6, a unique local address has to be configured for the
+interface along with accepting ICMP Router Advertisements and an
+automatically generated link-local address.
+.Bd -literal -offset indent
+ifconfig_wifibox0_ipv6="inet6 fd00::1/64 accept_rtadv auto_linklocal"
 .Ed
 .Pp
 Note that since
