@@ -51,7 +51,7 @@ possible:
   (MSI) because that is required for the PCI pass-through to work.
 
 - A supported FreeBSD/amd64 system: 12.4-RELEASE or 13.2-RELEASE.
-  14-CURRENT will also probably work.
+  Later versions will also probably work, but your mileage may vary.
 
 - The [`bhyve+`] port which installs unofficial patches for `bhyve` to
   fill gaps present in the base system.  For FreeBSD 12, this is
@@ -157,7 +157,7 @@ configurations:
 | AMD Ryzen 7 5825U | Realtek RTL8852BE | HP Laptop 15s-eq3636nz | 13.2-RC3 |
 | Intel Core i5-3210M | Broadcom BCM4331 | Apple MacBook Pro A1278 | 13.2-RELEASE |
 | Intel Core i5-5300U | Intel Wireless 7265 | Lenovo Thinkpad T450 | 13.1-RELEASE |
-| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 12.4-RELEASE, 13.1-RELEASE, 14-CURRENT (snapshot `20220617-c692ea40265-256174`) |
+| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 12.4-RELEASE, 13.2-RELEASE, 14.0-BETA3, 15-CURRENT (snapshot `20230907-03a7c36ddbc0-265205`) |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
 | Intel Core i7-8565U | Qualcomm Atheros QCA6174 | Dell XPS 9380 | 13-STABLE |
