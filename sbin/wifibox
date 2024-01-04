@@ -13,9 +13,9 @@ CONFDIR=${PREFIX}/etc/wifibox
 WIFIBOX_LOG=${LOGDIR}/wifibox.log
 UDS_CONFIG=${CONFDIR}/appliance/uds_passthru.conf
 
-: "${BHYVE:=%%BHYVE%%}"
-: "${BHYVECTL:=%%BHYVECTL%%}"
-: "${VMM_KO:=%%VMM_KO%%}"
+: "${BHYVE:=/usr/sbin/bhyve}"
+: "${BHYVECTL:=/usr/sbin/bhyvectl}"
+: "${VMM_KO:=/boot/kernel/vmm.ko}"
 : "${DEVCTL:=/usr/sbin/devctl}"
 : "${DAEMON:=/usr/sbin/daemon}"
 : "${IFCONFIG:=/sbin/ifconfig}"

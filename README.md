@@ -50,12 +50,8 @@ possible:
   Also, the Linux driver has to support [Message Signaled Interrupts]
   (MSI) because that is required for the PCI pass-through to work.
 
-- A supported FreeBSD/amd64 system: 12.4-RELEASE or 13.2-RELEASE.
+- A supported FreeBSD/amd64 system: 13.2-RELEASE or 14.0-RELEASE.
   Later versions will also probably work, but your mileage may vary.
-
-- The [`bhyve+`] port which installs unofficial patches for `bhyve` to
-  fill gaps present in the base system.  For FreeBSD 12, this is
-  mandatory, but it may come handy on newer systems as well.
 
 - [`grub2-bhyve`] or the corresponding `sysutils/grub2-bhyve` FreeBSD
   package, so the Linux guest could be booted via GRUB 2.
@@ -86,9 +82,6 @@ mostly recommended for development and testing.
     LOCALBASE=<prefix of the grub2-bhyve and socat packages> \
     GUEST_ROOT=<guest disk image location> \
     GUEST_MAN=<guest manual page location> \
-    BHYVE=<bhyve binary location> \
-    BHYVECTL=<bhyvectl binary location> \
-    VMM_KO=<vmm kernel module location> \
     RECOVERY_METHOD=<method to use on suspend and resume>
 ```
 
@@ -109,14 +102,6 @@ repository.
 
 - When needed, `device.map` could also be placed there to teach GRUB
   about the virtual disk image.
-
-The `BHYVE`, `BHYVECTL`, and `VMM_KO` variables give the location of
-the `bhyve`, `bhyvectl` binaries, and the `vmm.ko` kernel module
-respectively.  By default, these are the ones in the base system
-(i.e. `/usr/sbin/bhyve`) but they might be insufficient on older
-systems, due to lack of support for VirtFS/9P file system passthrough
-or missing fixes.  If [`bhyve+`] is installed, this is the way to hook
-it up.
 
 The `RECOVERY_METHOD` variable can be used to tell in which way
 Wifibox should be revived on a suspend/resume pair of events.
@@ -157,7 +142,7 @@ configurations:
 | AMD Ryzen 7 5825U | Realtek RTL8852BE | HP Laptop 15s-eq3636nz | 13.2-RC3 |
 | Intel Core i5-3210M | Broadcom BCM4331 | Apple MacBook Pro A1278 | 13.2-RELEASE |
 | Intel Core i5-5300U | Intel Wireless 7265 | Lenovo Thinkpad T450 | 13.1-RELEASE |
-| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 12.4-RELEASE, 13.2-RELEASE, 14.0-BETA3, 15-CURRENT (snapshot `20230907-03a7c36ddbc0-265205`) |
+| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 13.2-RELEASE, 14.0-BETA3, 15-CURRENT (snapshot `20230907-03a7c36ddbc0-265205`) |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 | Intel Core i5-8250U | Realtek RTL8822BE | Lenovo YOGA 730 | 13.2-RELEASE |
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
@@ -171,7 +156,6 @@ configuration added here!
 
 [`bhyve`]: https://wiki.freebsd.org/bhyve
 [Message Signaled Interrupts]: https://www.kernel.org/doc/Documentation/PCI/MSI-HOWTO.txt
-[`bhyve+`]: https://github.com/pgj/freebsd-bhyve-plus-port/
 [`freebsd-wifibox-port`]: https://github.com/pgj/freebsd-wifibox-port
 [`freebsd-wifibox-alpine`]: https://github.com/pgj/freebsd-wifibox-alpine
 [`net/wpa_supplicant_gui`]: https://cgit.freebsd.org/ports/tree/net/wpa_supplicant_gui
