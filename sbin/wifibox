@@ -401,7 +401,7 @@ uds_passthru_stop() {
     ${KILL} -TERM ${_connections}
 }
 
-get_ppt_device() {
+get_ppt_devices() {
     check_configuration "${CONFDIR}/bhyve.conf"
     passthru=
 
@@ -411,7 +411,8 @@ get_ppt_device() {
     if [ -z "${passthru}" ]; then
 	${ECHO} ""
     else
-	${ECHO} "pci${passthru}" | ${SED} 's!/!:!g'
+	${ECHO} "${passthru}" \
+	    | ${SED} -E 's!([0-9]*)/([0-9]*)/([0-9]*)!pci\1:\2:\3!g'
     fi
 }
 
@@ -425,13 +426,15 @@ destroy_vm() {
     ${BHYVECTL} --destroy --vm=${WIFIBOX_VM} 2>&1 | capture_output info bhyvectl
     ${SLEEP} 1 2>&1 | capture_output debug sleep
 
-    _ppt="$(get_ppt_device)"
+    _ppts="$(get_ppt_devices)"
 
-    if [ -n "${_ppt}" ]; then
-	log info "Destroying bhyve PPT device: ${_ppt}"
-	if ! ${DEVCTL} clear driver -f "${_ppt}" 2>&1 | capture_output debug devctl; then
-	    log warn "The PPT device could not be destroyed"
-	fi
+    if [ -n "${_ppts}" ]; then
+	for ppt in ${_ppts}; do
+	    log info "Destroying bhyve PPT device: ${ppt}"
+	    if ! ${DEVCTL} clear driver -f "${ppt}" 2>&1 | capture_output debug devctl; then
+		log warn "The PPT device could not be destroyed"
+	    fi
+	done
     else
 	log warn "No bhyve PPT device could be found"
     fi
@@ -515,7 +518,7 @@ vm_manager() {
     # shellcheck source=./etc/bhyve.conf.sample
     . "${CONFDIR}/bhyve.conf"
 
-    log debug "cpus=${cpus}, memory=${memory}, passthru=${passthru}, console=${console}"
+    log debug "cpus=${cpus}, memory=${memory}, passthru=[${passthru}], console=${console}"
 
     if [ "${console}" = "yes" ]; then
 	_nmdm_grub_bhyve="-c ${NMDM_A}"
@@ -526,16 +529,25 @@ vm_manager() {
     fi
 
     if [ -n "${passthru}" ]; then
-	_passthru_bhyve="-s 6:0,passthru,${passthru}"
-	log info "Passthru device is configured: ${passthru}"
+	_passthru_bhyve=""
+	_slot=0
+
+	for sbf in ${passthru}; do
+	    _passthru_bhyve="${_passthru_bhyve} -s 6:${_slot},passthru,${sbf}"
+	    _slot=$(${EXPR} ${_slot} + 1)
+        done
+
+	log info "Passthru devices configured: [${passthru}]"
     else
 	log warn "No passthru device is configured"
     fi
 
-    _ppt="$(get_ppt_device)"
-    if [ -n "${_ppt}" ]; then
-	${DEVCTL} set driver -f "${_ppt}" ppt 2>&1 | capture_output debug devctl
-	log info "PPT driver is configured for ${_ppt} device"
+    _ppts="$(get_ppt_devices)"
+    if [ -n "${_ppts}" ]; then
+	for ppt in ${_ppts}; do
+	    ${DEVCTL} set driver -f "${ppt}" ppt 2>&1 | capture_output debug devctl
+	    log info "PPT driver is configured for ${ppt} device"
+	done
     else
 	log warn "No PPT driver is attached due to lack of device"
     fi

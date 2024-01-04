@@ -19,4 +19,9 @@ console=no
 # the pciconf(8) tool.  THIS MUST BE SET otherwise the device will not
 # be visible for the guest.  Expected format: "s/b/f", e.g."3/0/0" for
 # the `pci0:3:0:0` device.
+#
+# Note that it is possible to include other PCI devices, for example
+# the USB xHCI controller in case interaction with the Bluetooth
+# device is needed.  Separate the slot/bus/function value with space,
+# e.g. "3/0/0 0/20/0", where `pci0:0:20:0` is the xHCI controller.
 passthru=
