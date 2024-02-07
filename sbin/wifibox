@@ -432,7 +432,7 @@ destroy_vm() {
 	for ppt in ${_ppts}; do
 	    log info "Destroying bhyve PPT device: ${ppt}"
 	    if ! ${DEVCTL} clear driver -f "${ppt}" 2>&1 | capture_output debug devctl; then
-		log warn "The PPT device could not be destroyed"
+		log warn "PPT device ${ppt} could not be destroyed"
 	    fi
 	done
     else
@@ -482,6 +482,7 @@ assert_daemonized() {
 
 # shellcheck disable=SC2086
 vm_manager() {
+    local _passthru_syntax
     local _nmdm_grub_bhyve
     local _nmdm_bhyve
     local _passthru_bhyve
@@ -519,6 +520,12 @@ vm_manager() {
     . "${CONFDIR}/bhyve.conf"
 
     log debug "cpus=${cpus}, memory=${memory}, passthru=[${passthru}], console=${console}"
+    _passthru_syntax='^([[:space:]]*[0-9]{1,3}/[0-9]{1,3}/[0-9]{1,3}[[:space:]]*)*$'
+
+    if ! ${ECHO} "${passthru}" | ${GREP} -Eq "${_passthru_syntax}"; then
+	log error "bhyve.conf: malformed passthru configuration value: \"${passthru}\""
+	exit 3
+    fi
 
     if [ "${console}" = "yes" ]; then
 	_nmdm_grub_bhyve="-c ${NMDM_A}"
