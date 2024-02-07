@@ -67,6 +67,8 @@ body:
         - /var/log/wifibox.log (with DEBUG logging verbosity)
         - /var/run/wifibox/appliance/log/dmesg
         - /var/run/wifibox/appliance/log/messages
+
+        Hint: The DEBUG log verbosity could be configured in the `core.conf` file, which is located in the `$LOCALBASE/etc/wifibox` directory.
     validations:
       required: true
   - type: textarea
