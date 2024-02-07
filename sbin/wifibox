@@ -480,6 +480,11 @@ assert_daemonized() {
     fi
 }
 
+quit_daemonization() {
+    log info "VM manager: quit daemonization"
+    ${KILL} -SIGTERM $PPID
+}
+
 # shellcheck disable=SC2086
 vm_manager() {
     local _passthru_syntax
@@ -524,6 +529,7 @@ vm_manager() {
 
     if ! ${ECHO} "${passthru}" | ${GREP} -Eq "${_passthru_syntax}"; then
 	log error "bhyve.conf: malformed passthru configuration value: \"${passthru}\""
+	quit_daemonization
 	exit 3
     fi
 
@@ -566,6 +572,7 @@ vm_manager() {
 	log info "tap interface is configured: ${_tap}"
     else
 	log error "No tap interface is available, cannot proceed"
+	quit_daemonization
 	exit 5
     fi
 
@@ -573,11 +580,13 @@ vm_manager() {
 
     if [ ! -f "${_grub_cfg}" ]; then
 	log error "${_grub_cfg} could not be found, guest cannot be started"
+	quit_daemonization
 	exit 4
     fi
 
     if [ ! -f "${DISK_IMAGE}" ]; then
 	log error "${DISK_IMAGE} could not be found, guest cannot be started"
+	quit_daemonization
 	exit 4
     fi
 
@@ -664,9 +673,7 @@ vm_manager() {
 
     destroy_nmdm
     destroy_bridge
-
-    log info "VM manager: quit daemonization"
-    ${KILL} -SIGTERM $PPID
+    quit_daemonization
 }
 
 vm_stop() {
