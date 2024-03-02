@@ -10,10 +10,11 @@ Wifibox tries to implement as a single easy-to-use software package.
   utilized to run the embedded Linux system.  This helps to achieve
   low resource footprint.
 
-- Configuration files are shared with the host system.  For example,
-  the guest may either use `wpa_supplicant(8)` or `hostapd(8)` and it
-  is possible to import the host's `wpa_supplicant.conf(5)` and
-  `hostapd.conf(5)` files without any changes.
+- Configuration files could be shared with the host system.  For
+  example, the guest may either use `wpa_supplicant(8)` or
+  `hostapd(8)` and it is possible to import the host's
+  `wpa_supplicant.conf(5)` and `hostapd.conf(5)` files without any
+  changes.
 
 - When configured by the guest, `wpa_supplicant(8)` or `hostapd(8)`
   control sockets could be exposed, which enables use of related
@@ -35,6 +36,12 @@ be useful and inspiring for others.  By its nature, it is a workaround
 and shall be deprecated once the FreeBSD wireless drivers and
 networking stack are updated to catch up with Linux.*
 
+*Wifibox does not necessarily offer a drop-in replacement for the
+wireless networking stack of FreeBSD.  This is entirely determined by
+how the guest exposes network traffic for the host, which might happen
+via Network Address Translation (NAT) or bridging, for example.  Be
+sure to consult the documentation of the guest itself before use.*
+
 ## Prerequisites
 
 Before the installation, please check if those items are present on
@@ -49,6 +56,7 @@ possible:
   Linux versions, but it is not performing well enough under FreeBSD.
   Also, the Linux driver has to support [Message Signaled Interrupts]
   (MSI) because that is required for the PCI pass-through to work.
+  USB wireless adapters are not supported.
 
 - A supported FreeBSD/amd64 system: 13.2-RELEASE or 14.0-RELEASE.
   Later versions will also probably work, but your mileage may vary.

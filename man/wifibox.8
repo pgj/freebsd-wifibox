@@ -1,4 +1,4 @@
-.Dd September 15, 2023
+.Dd March 2, 2024
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -52,14 +52,24 @@ There is a
 .Nm
 system service provided that can be used to start the appliance on boot
 and stop on shutdown.
+.Pp
+Note that
+.Nm
+is only responsible for managing and supervising the Linux guest. Due
+to its design, it does not have any knowledge about how the traffic is
+presented to the host.  It might be based on Network Address
+Translation (NAT) or it might implement bridged networking.  Please
+check the
+.Xr wifibox-guest 5
+manual page for more information to learn about the actual approach.
 .Sh CONFIGURATION
-After the installation to the system, check the sample configuration
+After the installation, review and revisit the sample configuration
 files provided in the
 .Pa %%PREFIX%%/etc/wifibox
-directory and follow the instructions to create a working configuration,
-otherwise
-.Nm
-will refuse to start.
+directory and follow the instructions to create a working
+configuration.  The directory layout and the contents of the files
+depend on the guest used.  Make sure that the networking configuration
+does not conflict with that of the host in any case.
 .Pp
 By default, PCI pass-through is disabled for AMD-based hardware, hence
 it must be explicitly enabled via the corresponding
@@ -312,8 +322,12 @@ does not have behave in the expected way, check
 .Pa /var/log/wifibox.log
 for errors.  This file holds messages about the progress of each
 executed command, and their amount depends on the configured level of
-logging.  The log files of the guest are exported to the host and they
-are made available under the
+logging.  The level of logging could be configured in
+.Pa %%PREFIX%%/etc/wifibox/core.conf ,
+please consult this file for the details.
+.Pp
+The log files of the guest are exported to the host and they are made
+available under the
 .Pa /var/run/wifibox/appliance/log
 directory.  There it is recommended to check the
 .Pa /var/run/wifibox/appliance/log/dmesg
@@ -323,7 +337,9 @@ initialization, and the
 file for the run-time system messages, which are usually emitted
 by the daemons.  If all else fails, use the
 .Cm console
-command to connect to the guest.
+command to connect to the guest.  In that case, please study the
+.Xr wifibox-guest 5
+manual page before proceeding.
 .Sh EXIT STATUS
 The exit status is 0 on success, and >0 if any of the commands fail.
 .Sh SEE ALSO
@@ -344,7 +360,9 @@ The exit status is 0 on success, and >0 if any of the commands fail.
 .Sh CAVEATS
 .Nm
 supports only a single wireless network device at a time, and it has
-to be PCI one.  It cannot be launched multiple times.
+to be a PCI one.  USB devices are not supported, and
+.Nm
+cannot be launched multiple times.
 .Pp
 The
 .Cm restart vmm
