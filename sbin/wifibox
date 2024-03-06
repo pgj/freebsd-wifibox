@@ -13,13 +13,17 @@ CONFDIR=${PREFIX}/etc/wifibox
 WIFIBOX_LOG=${LOGDIR}/wifibox.log
 UDS_CONFIG=${CONFDIR}/appliance/uds_passthru.conf
 
+: "${SYSCTL:=/sbin/sysctl}"
+: "${SED:=/usr/bin/sed}"
+
+KERNEL_PATH=$(${SYSCTL} -n kern.module_path | ${SED} -E 's/^([^;]*);.*/\1/')
+
 : "${BHYVE:=/usr/sbin/bhyve}"
 : "${BHYVECTL:=/usr/sbin/bhyvectl}"
-: "${VMM_KO:=/boot/kernel/vmm.ko}"
+: "${VMM_KO:=${KERNEL_PATH}/vmm.ko}"
 : "${DEVCTL:=/usr/sbin/devctl}"
 : "${DAEMON:=/usr/sbin/daemon}"
 : "${IFCONFIG:=/sbin/ifconfig}"
-: "${SYSCTL:=/sbin/sysctl}"
 : "${KLDLOAD:=/sbin/kldload}"
 : "${KLDUNLOAD:=/sbin/kldunload}"
 : "${KLDSTAT:=/sbin/kldstat}"
@@ -32,7 +36,6 @@ UDS_CONFIG=${CONFDIR}/appliance/uds_passthru.conf
 : "${PS:=/bin/ps}"
 : "${PRINTF:=/usr/bin/printf}"
 : "${GREP:=/usr/bin/grep}"
-: "${SED:=/usr/bin/sed}"
 : "${TAIL:=/usr/bin/tail}"
 : "${HEAD:=/usr/bin/head}"
 : "${SLEEP:=/bin/sleep}"
