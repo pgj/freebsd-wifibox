@@ -156,6 +156,7 @@ configurations:
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
 | Intel Core i7-7500U | Intel(R) Dual Band Wireless AC 8265 | Lenovo Thinkpad X1 Gen5 | 13.2-RELEASE |
 | Intel Core i7-7700K | Intel(R) Dual Band Wireless AC 3168 | Desktop HP 820 NL | 13.2-RELEASE |
+| Intel Core i7-7820HQ | Intel(R) Wi-Fi 6E AX210/AX1675 | Dell Precision 7720 | 13.3-RELEASE |
 | Intel Core i7-8565U | Qualcomm Atheros QCA6174 | Dell XPS 9380 | 13-STABLE |
 | Intel Core i7-8650U | Intel(R) Dual Band Wireless AC 8265 | Lenovo Thinkpad T480 | 13.1-RELEASE |
 
