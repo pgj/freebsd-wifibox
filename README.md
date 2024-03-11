@@ -58,7 +58,7 @@ possible:
   (MSI) because that is required for the PCI pass-through to work.
   USB wireless adapters are not supported.
 
-- A supported FreeBSD/amd64 system: 13.2-RELEASE or 14.0-RELEASE.
+- A supported FreeBSD/amd64 system: 13.3-RELEASE or 14.0-RELEASE.
   Later versions will also probably work, but your mileage may vary.
 
 - [`grub2-bhyve`] or the corresponding `sysutils/grub2-bhyve` FreeBSD
