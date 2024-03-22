@@ -29,6 +29,7 @@ KERNEL_PATH=$(${SYSCTL} -n kern.module_path | ${SED} -E 's/^([^;]*);.*/\1/')
 : "${KLDSTAT:=/sbin/kldstat}"
 : "${SHA256:=/sbin/sha256}"
 : "${MKNOD:=/sbin/mknod}"
+: "${NICE:=/usr/bin/nice}"
 
 : "${CAT:=/bin/cat}"
 : "${ECHO:=/bin/echo}"
@@ -488,9 +489,21 @@ quit_daemonization() {
     ${KILL} -SIGTERM $PPID
 }
 
+assert_value_wellformed() {
+    local _location="$1"
+    local _name="$2"
+    local _syntax="$3"
+    local _value="$4"
+
+    if ! ${ECHO} "${_value}" | ${GREP} -Eq "${_syntax}"; then
+	log error "${_location}: malformed ${_name} value: \"${_value}\""
+	quit_daemonization
+	exit 3
+    fi
+}
+
 # shellcheck disable=SC2086
 vm_manager() {
-    local _passthru_syntax
     local _nmdm_grub_bhyve
     local _nmdm_bhyve
     local _passthru_bhyve
@@ -505,6 +518,7 @@ vm_manager() {
     local _grub_bhyve_exit_code
     local _grub_device_map="${GUEST_ROOT}/device.map"
     local _grub_cfg="${GUEST_ROOT}/grub.cfg"
+    local _nice_priority
     local _bhyve_args
     local _bhyve_devs
     local _slot
@@ -522,19 +536,35 @@ vm_manager() {
     memory=128M
     passthru=
     console=no
+    priority=50
 
     log info "Pulling bhyve options from configuration file"
     # shellcheck source=./etc/bhyve.conf.sample
     . "${CONFDIR}/bhyve.conf"
 
-    log debug "cpus=${cpus}, memory=${memory}, passthru=[${passthru}], console=${console}"
-    _passthru_syntax='^([[:space:]]*[0-9]{1,3}/[0-9]{1,3}/[0-9]{1,3}[[:space:]]*)*$'
+    log debug "cpus=${cpus}"
+    log debug "memory=${memory}"
+    log debug "passthru=[${passthru}]"
+    log debug "console=${console}"
+    log debug "priority=${priority}"
 
-    if ! ${ECHO} "${passthru}" | ${GREP} -Eq "${_passthru_syntax}"; then
-	log error "bhyve.conf: malformed passthru configuration value: \"${passthru}\""
+    assert_value_wellformed \
+	"bhyve.conf" "passthru" \
+	'^([[:space:]]*[0-9]{1,3}/[0-9]{1,3}/[0-9]{1,3}[[:space:]]*)*$' \
+	"${passthru}"
+
+    assert_value_wellformed \
+	"bhyve.conf" "priority" \
+	'^[[:space:]]*[0-9]*[[:space:]]*$' \
+	"${priority}"
+
+    if [ ${priority} -lt 0 ] || [ ${priority} -gt 99 ]; then
+	log error "bhyve.conf: priority should be in between 0 and 99: ${priority}"
 	quit_daemonization
 	exit 3
     fi
+
+    _nice_priority=$(${EXPR} \( ${priority} \* 40 / 99 \) - 20)
 
     if [ "${console}" = "yes" ]; then
 	_nmdm_grub_bhyve="-c ${NMDM_A}"
@@ -656,8 +686,10 @@ vm_manager() {
     _bhyve_args="${_bhyve_args} ${_passthru_bhyve}"
     _bhyve_args="${_bhyve_args} ${WIFIBOX_VM}"
 
+    log debug "Nice priority: ${_nice_priority}"
     log debug "Arguments: ${_bhyve_args}"
-    ${BHYVE} ${_bhyve_args} 2>&1 | capture_output debug bhyve
+    ${NICE} -n ${_nice_priority} \
+	    ${BHYVE} ${_bhyve_args} 2>&1 | capture_output debug bhyve
     _bhyve_exit_code="$?"
     destroy_vm
 
