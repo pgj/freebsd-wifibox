@@ -25,3 +25,8 @@ console=no
 # device is needed.  Separate the slot/bus/function value with space,
 # e.g. "3/0/0 0/20/0", where `pci0:0:20:0` is the xHCI controller.
 passthru=
+
+# Priority of the bhyve(8) process that runs the guest.  This has to
+# be set in the range of 0 to 99, where 0 is the highest possible
+# priority while 99 is the lowest.
+priority=50
