@@ -493,17 +493,51 @@ assert_value_wellformed() {
     local _location="$1"
     local _name="$2"
     local _syntax="$3"
-    local _value="$4"
+    local _expected="$4"
+    local _value="$5"
 
     if ! ${ECHO} "${_value}" | ${GREP} -Eq "${_syntax}"; then
-	log error "${_location}: malformed ${_name} value: \"${_value}\""
+	log error "${_location}: malformed ${_name} value: \"${_value}\", expected: ${_expected}"
 	quit_daemonization
 	exit 3
     fi
 }
 
+assert_value_ranged_integer() {
+    local _location="$1"
+    local _name="$2"
+    local _lower="$3"
+    local _upper="$4"
+    local _value="$5"
+    local _syntax='^[[:space:]]*[0-9]+[[:space:]]*$'
+
+    assert_value_wellformed \
+	"${_location}" "${_name}" \
+	"${_syntax}" "non-negative integer" \
+	"${_value}"
+
+    if [ "${_value}" -lt "${_lower}" ] || [ "${_value}" -gt "${_upper}" ]; then
+	log error "${_location}: ${_name} should be in between ${_lower} and ${_upper}: ${_value}"
+	quit_daemonization
+	exit 3
+    fi
+}
+
+assert_value_yesno() {
+    local _location="$1"
+    local _name="$2"
+    local _value="$3"
+    local _syntax='^[[:space:]]*(yes|no)[[:space:]]*$'
+
+    assert_value_wellformed \
+	"${_location}" "${_name}" \
+	"${_syntax}" "yes or no" \
+	"${_value}"
+}
+
 # shellcheck disable=SC2086
 vm_manager() {
+    local _max_vmm_cpus
     local _nmdm_grub_bhyve
     local _nmdm_bhyve
     local _passthru_bhyve
@@ -548,21 +582,33 @@ vm_manager() {
     log debug "console=${console}"
     log debug "priority=${priority}"
 
+    _max_vmm_cpus=$(${SYSCTL} -n hw.vmm.maxcpu)
+
+    log debug "bhyve max cpus=${_max_vmm_cpus}"
+
+    assert_value_ranged_integer \
+	"bhyve.conf" "cpus" 1 ${_max_vmm_cpus} \
+	"${cpus}"
+
+    assert_value_wellformed \
+	"bhyve.conf" "memory" \
+	'^[[:space:]]*[0-9]+([Kk]|[Mm]|[Gg]|[Tt])?[[:space:]]*$' \
+	"non-negative integer, suffixed with unit: K, M, G, T" \
+	"${memory}"
+
     assert_value_wellformed \
 	"bhyve.conf" "passthru" \
 	'^([[:space:]]*[0-9]{1,3}/[0-9]{1,3}/[0-9]{1,3}[[:space:]]*)*$' \
+	"list of slot/bus/function, triples of non-negative integers" \
 	"${passthru}"
 
-    assert_value_wellformed \
-	"bhyve.conf" "priority" \
-	'^[[:space:]]*[0-9]*[[:space:]]*$' \
-	"${priority}"
+    assert_value_yesno \
+	"bhyve.conf" "console" \
+	"${console}"
 
-    if [ ${priority} -lt 0 ] || [ ${priority} -gt 99 ]; then
-	log error "bhyve.conf: priority should be in between 0 and 99: ${priority}"
-	quit_daemonization
-	exit 3
-    fi
+    assert_value_ranged_integer \
+	"bhyve.conf" "priority" 0 99 \
+	"${priority}"
 
     _nice_priority=$(${EXPR} \( ${priority} \* 40 / 99 \) - 20)
 
