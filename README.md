@@ -150,7 +150,7 @@ configurations:
 | AMD Ryzen 7 5825U | Realtek RTL8852BE | HP Laptop 15s-eq3636nz | 13.2-RC3 |
 | Intel Core i5-3210M | Broadcom BCM4331 | Apple MacBook Pro A1278 | 13.2-RELEASE |
 | Intel Core i5-5300U | Intel Wireless 7265 | Lenovo Thinkpad T450 | 13.1-RELEASE |
-| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 13.2-RELEASE, 14.0-BETA3, 15-CURRENT (snapshot `20230907-03a7c36ddbc0-265205`) |
+| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo Thinkpad X270 | 13.3-RELEASE, 14.0-RELEASE, 15-CURRENT (snapshot `20240314-220ee18f1964-268793`) |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 | Intel Core i5-8250U | Realtek RTL8822BE | Lenovo YOGA 730 | 13.2-RELEASE |
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
