@@ -159,6 +159,7 @@ configurations:
 | Intel Core i7-7820HQ | Intel(R) Wi-Fi 6E AX210/AX1675 | Dell Precision 7720 | 13.3-RELEASE |
 | Intel Core i7-8565U | Qualcomm Atheros QCA6174 | Dell XPS 9380 | 13-STABLE |
 | Intel Core i7-8650U | Intel(R) Dual Band Wireless AC 8265 | Lenovo Thinkpad T480 | 13.1-RELEASE |
+| Intel Core i7-8665U | Intel(R) Dual Band Wireless AC 9560 | Lenovo ThinkPad X1 Carbon | GhostBSD 24.01.1 |
 
 Feel free to submit a pull request or write an email to have your
 configuration added here!
