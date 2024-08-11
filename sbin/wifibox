@@ -21,6 +21,7 @@ KERNEL_PATH=$(${SYSCTL} -n kern.module_path | ${SED} -E 's/^([^;]*);.*/\1/')
 : "${BHYVE:=/usr/sbin/bhyve}"
 : "${BHYVECTL:=/usr/sbin/bhyvectl}"
 : "${VMM_KO:=${KERNEL_PATH}/vmm.ko}"
+: "${NMDM_KO:=${KERNEL_PATH}/nmdm.ko}"
 : "${DEVCTL:=/usr/sbin/devctl}"
 : "${DAEMON:=/usr/sbin/daemon}"
 : "${IFCONFIG:=/sbin/ifconfig}"
@@ -28,7 +29,6 @@ KERNEL_PATH=$(${SYSCTL} -n kern.module_path | ${SED} -E 's/^([^;]*);.*/\1/')
 : "${KLDUNLOAD:=/sbin/kldunload}"
 : "${KLDSTAT:=/sbin/kldstat}"
 : "${SHA256:=/sbin/sha256}"
-: "${MKNOD:=/sbin/mknod}"
 : "${NICE:=/usr/bin/nice}"
 
 : "${CAT:=/bin/cat}"
@@ -46,6 +46,7 @@ KERNEL_PATH=$(${SYSCTL} -n kern.module_path | ${SED} -E 's/^([^;]*);.*/\1/')
 : "${CU:=/usr/bin/cu}"
 : "${NETSTAT:=/usr/bin/netstat}"
 : "${READLINK:=/usr/bin/readlink}"
+: "${LS:=/bin/ls}"
 
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
 : "${SOCAT:=${LOCALBASE}/bin/socat}"
@@ -146,9 +147,19 @@ sysctl_value() {
     ${SYSCTL} -nq "$1"
 }
 
+get_kmod_path() {
+    local _kmod="$1"
+
+    ${KLDSTAT} -v -n "${_kmod}" \
+	| ${TAIL} +2 \
+	| ${HEAD} -1 \
+	| ${SED} -e 's![^(]*(\([^)]*\))!\1!'
+}
+
 assert_kmod_loaded() {
     local _kmod="$1"
     local _kmod_file
+    local _kmod_path
 
     if [ -n "$2" ]; then
 	_kmod_file="$2"
@@ -156,7 +167,20 @@ assert_kmod_loaded() {
 	_kmod_file="${_kmod}"
     fi
 
-    log debug "assert loaded: kmod=${_kmod}, kmod_file=${_kmod_file}"
+    log debug "Check location: kmod=${_kmod}, kmod_file=${_kmod_file}"
+
+    if ${KLDSTAT} -q -m "${_kmod}"; then
+	_kmod_path="$(get_kmod_path "${_kmod}")"
+	log info "${_kmod}.ko is expected at path: ${_kmod_file}"
+	log info "${_kmod}.ko is found at path: ${_kmod_path}"
+
+	if [ "${_kmod_path}" != "${_kmod_file}" ] && ! ${KLDUNLOAD} "${_kmod}"; then
+	    log error "${_kmod}.ko is loaded from a different location, but cannot be replaced"
+	    exit 127
+	fi
+    fi
+
+    log debug "Assert loaded: kmod=${_kmod}, kmod_file=${_kmod_file}"
 
     if ! ${KLDSTAT} -q -m "${_kmod}"; then
 	log debug "Kernel module ${_kmod} is not loaded"
@@ -170,30 +194,12 @@ assert_kmod_loaded() {
     fi
 }
 
-get_kmod_path() {
-    local _kmod="$1"
-
-    ${KLDSTAT} -v -n "${_kmod}" \
-	| ${TAIL} +2 \
-	| ${HEAD} -1 \
-	| ${SED} -e 's![^(]*(\([^)]*\))!\1!'
+assert_vmm_loaded() {
+    assert_kmod_loaded "vmm" "${VMM_KO}"
 }
 
-assert_vmm_loaded() {
-    local _kmod_path
-
-    if ${KLDSTAT} -q -m vmm; then
-	_kmod_path="$(get_kmod_path vmm)"
-	log info "vmm.ko is expected at path: ${VMM_KO}"
-	log info "vmm.ko is found at path: ${_kmod_path}"
-
-	if [ "${_kmod_path}" != "${VMM_KO}" ] && ! ${KLDUNLOAD} vmm; then
-	    log error "vmm.ko is loaded from a different location, but cannot be replaced"
-	    exit 127
-	fi
-    fi
-
-    assert_kmod_loaded "vmm" "${VMM_KO}"
+assert_nmdm_loaded() {
+    assert_kmod_loaded "nmdm" "${NMDM_KO}"
 }
 
 # shellcheck disable=SC2046
@@ -221,13 +227,58 @@ get_image_checksum() {
     ${SHA256} -q "${DISK_IMAGE}"
 }
 
-check_configuration() {
-    local _file="$1"
+load_bhyve_conf_values() {
+    local _config="${CONFDIR}/bhyve.conf"
 
-    if [ ! -f "${_file}" ]; then
-	log error "${_file} is missing, please create it from the sample"
+    if [ ! -f "${_config}" ]; then
+	log error "${_config} is missing, please create it from the sample"
 	exit 3
     fi
+
+    # Internal defaults
+    cpus=1
+    memory=128M
+    passthru=
+    console=no
+    priority=50
+
+    log info "Pulling bhyve options from configuration file"
+    # shellcheck source=./etc/bhyve.conf.sample
+    . "${CONFDIR}/bhyve.conf"
+
+    log debug "cpus=${cpus}"
+    log debug "memory=${memory}"
+    log debug "passthru=[${passthru}]"
+    log debug "console=${console}"
+    log debug "priority=${priority}"
+
+    _max_vmm_cpus=$(${SYSCTL} -n hw.vmm.maxcpu)
+
+    log debug "bhyve max cpus=${_max_vmm_cpus}"
+
+    assert_value_ranged_integer \
+	"bhyve.conf" "cpus" 1 "${_max_vmm_cpus}" \
+	"${cpus}"
+
+    assert_value_wellformed \
+	"bhyve.conf" "memory" \
+	'^[[:space:]]*[0-9]+([Kk]|[Mm]|[Gg]|[Tt])?[[:space:]]*$' \
+	"non-negative integer, suffixed with unit: K, M, G, T" \
+	"${memory}"
+
+    assert_value_wellformed \
+	"bhyve.conf" "passthru" \
+	'^([[:space:]]*[0-9]{1,3}/[0-9]{1,3}/[0-9]{1,3}[[:space:]]*)*$' \
+	"list of slot/bus/function, triples of non-negative integers" \
+	"${passthru}"
+
+    assert_value_yesno \
+	"bhyve.conf" "console" \
+	"${console}"
+
+    assert_value_ranged_integer \
+	"bhyve.conf" "priority" 0 99 \
+	"${priority}"
 }
 
 has_bridge_interface() {
@@ -279,40 +330,6 @@ destroy_bridge() {
     else
 	log warn "No linked tap inteface found for ${WIFIBOX_IF}"
     fi
-}
-
-create_nmdm() {
-    check_configuration "${CONFDIR}/bhyve.conf"
-
-    # shellcheck source=./etc/bhyve.conf.sample
-    . "${CONFDIR}/bhyve.conf"
-
-    [ "${console}" != "yes" ] && return 0
-
-    log info "Bringing up null-modem devices for console connection"
-    assert_kmod_loaded "nmdm"
-
-    [ ! -c ${NMDM_A} ] && ${MKNOD} ${NMDM_A} 2>&1 | capture_output debug mknod
-    [ ! -c ${NMDM_B} ] && ${MKNOD} ${NMDM_B} 2>&1 | capture_output debug mknod
-
-    [ ! -c ${NMDM_A} ] && log warn "${NMDM_A} is not available"
-    [ ! -c ${NMDM_B} ] && log warn "${NMDM_B} is not available"
-
-    [ -c ${NMDM_A} ] && [ -c ${NMDM_B} ] \
-	&& log info "Null-modem devices are available"
-}
-
-destroy_nmdm() {
-    log info "Removing null-modem devices"
-
-    [ -c ${NMDM_A} ] && ${RM} ${NMDM_A} 2>&1 | capture_output debug rm
-    [ -c ${NMDM_B} ] && ${RM} ${NMDM_B} 2>&1 | capture_output debug rm
-
-    [ -c ${NMDM_A} ] && log warn "${NMDM_A} could not be removed"
-    [ -c ${NMDM_B} ] && log warn "${NMDM_B} could not be removed"
-
-    [ ! -c ${NMDM_A} ] && [ ! -c ${NMDM_B} ] \
-	&& log info "Null-modem devices are removed"
 }
 
 find_guest_ip() {
@@ -406,11 +423,7 @@ uds_passthru_stop() {
 }
 
 get_ppt_devices() {
-    check_configuration "${CONFDIR}/bhyve.conf"
-    passthru=
-
-    # shellcheck source=./etc/bhyve.conf.sample
-    . "${CONFDIR}/bhyve.conf"
+    load_bhyve_conf_values
 
     if [ -z "${passthru}" ]; then
 	${ECHO} ""
@@ -564,55 +577,11 @@ vm_manager() {
     log info "VM manager launched"
     log info "Gathering necessary configuration files for launching the guest"
 
-    check_configuration "${CONFDIR}/bhyve.conf"
-
-    cpus=1
-    memory=128M
-    passthru=
-    console=no
-    priority=50
-
-    log info "Pulling bhyve options from configuration file"
-    # shellcheck source=./etc/bhyve.conf.sample
-    . "${CONFDIR}/bhyve.conf"
-
-    log debug "cpus=${cpus}"
-    log debug "memory=${memory}"
-    log debug "passthru=[${passthru}]"
-    log debug "console=${console}"
-    log debug "priority=${priority}"
-
-    _max_vmm_cpus=$(${SYSCTL} -n hw.vmm.maxcpu)
-
-    log debug "bhyve max cpus=${_max_vmm_cpus}"
-
-    assert_value_ranged_integer \
-	"bhyve.conf" "cpus" 1 ${_max_vmm_cpus} \
-	"${cpus}"
-
-    assert_value_wellformed \
-	"bhyve.conf" "memory" \
-	'^[[:space:]]*[0-9]+([Kk]|[Mm]|[Gg]|[Tt])?[[:space:]]*$' \
-	"non-negative integer, suffixed with unit: K, M, G, T" \
-	"${memory}"
-
-    assert_value_wellformed \
-	"bhyve.conf" "passthru" \
-	'^([[:space:]]*[0-9]{1,3}/[0-9]{1,3}/[0-9]{1,3}[[:space:]]*)*$' \
-	"list of slot/bus/function, triples of non-negative integers" \
-	"${passthru}"
-
-    assert_value_yesno \
-	"bhyve.conf" "console" \
-	"${console}"
-
-    assert_value_ranged_integer \
-	"bhyve.conf" "priority" 0 99 \
-	"${priority}"
-
+    load_bhyve_conf_values
     _nice_priority=$(${EXPR} \( ${priority} \* 40 / 99 \) - 20)
 
     if [ "${console}" = "yes" ]; then
+	assert_nmdm_loaded
 	_nmdm_grub_bhyve="-c ${NMDM_A}"
 	_nmdm_bhyve="-l com1,${NMDM_A}"
 	log info "Guest console is configured to use"
@@ -752,7 +721,6 @@ vm_manager() {
 
     [ -n "${_restart}" ] && exit 1
 
-    destroy_nmdm
     destroy_bridge
     quit_daemonization
 }
@@ -807,9 +775,8 @@ wifibox_start() {
     case ${_target} in
 	guest) _start="G";;
 	""|netif) _start="GN";;
-	console) _start="GM";;
 	vmm) _start="GV";;
-	*) log error "Unknown target: ${_target} (supported: guest, netif, console, vmm)"
+	*) log error "Unknown target: ${_target} (supported: guest, netif, vmm)"
 	   exit 1;;
     esac
 
@@ -826,16 +793,8 @@ wifibox_start() {
 	show_progress
     fi
 
-    if has_flag "${_start}" "M"; then
-	create_nmdm
-	show_progress
-    fi
-
     if has_flag "${_start}" "G"; then
 	assert_vm_can_run
-
-	create_nmdm
-	show_progress
 
 	vm_start
 	show_progress
@@ -862,9 +821,8 @@ wifibox_stop() {
     case ${_target} in
 	guest) _stop="G";;
 	""|netif) _stop="GN";;
-	console) _stop="GM";;
 	vmm) _stop="GV";;
-	*) log error "Unknown target: ${_target} (supported: guest, netif, console, vmm)"
+	*) log error "Unknown target: ${_target} (supported: guest, netif, vmm)"
 	   exit 1;;
     esac
 
@@ -876,14 +834,6 @@ wifibox_stop() {
 	show_progress
 
 	vm_stop
-	show_progress
-
-	destroy_nmdm
-	show_progress
-    fi
-
-    if has_flag "${_stop}" "M"; then
-	destroy_nmdm
 	show_progress
     fi
 
@@ -944,9 +894,8 @@ wifibox_restart() {
     case ${_target} in
 	guest) _restart="G";;
 	""|netif) _restart="GN";;
-	console) _restart="GM";;
 	vmm) _restart="GV";;
-	*) log error "Unknown target: ${_target} (supported: guest, netif, console, vmm)"
+	*) log error "Unknown target: ${_target} (supported: guest, netif, vmm)"
 	   exit 1;;
     esac
 
@@ -957,11 +906,6 @@ wifibox_restart() {
 	uds_passthru_stop
 	show_progress
 	vm_stop
-	show_progress
-    fi
-
-    if has_flag "${_restart}" "M"; then
-	destroy_nmdm
 	show_progress
     fi
 
@@ -977,11 +921,6 @@ wifibox_restart() {
 
     if has_flag "${_restart}" "N"; then
 	create_bridge
-	show_progress
-    fi
-
-    if has_flag "${_restart}" "M"; then
-	create_nmdm
 	show_progress
     fi
 
@@ -1025,7 +964,7 @@ wifibox_console() {
 	exit 127
     fi
 
-    if [ ! -c ${NMDM_B} ]; then
+    if ! ${LS} "${NMDM_DEVICE}"* > /dev/null 2>&1; then
 	log error "No null-modem device is configured"
 	exit 127
     fi
@@ -1053,9 +992,9 @@ wifibox_version() {
 wifibox_usage() {
     ${CAT} <<EOF
 USAGE: ${SCRIPT} ...
-    start [guest|netif|console|vmm]
-    stop [guest|netif|console|vmm]
-    restart [guest|netif|console|vmm]
+    start [guest|netif|vmm]
+    stop [guest|netif|vmm]
+    restart [guest|netif|vmm]
     status
     console
     version

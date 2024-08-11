@@ -1,4 +1,4 @@
-.Dd March 2, 2024
+.Dd August 11, 2024
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -8,17 +8,17 @@
 .Nm
 .Cm start
 .Oo
-.Cm guest | Cm netif | Cm console | Cm vmm
+.Cm guest | Cm netif | Cm vmm
 .Oc
 .Nm
 .Cm stop
 .Oo
-.Cm guest | Cm netif | Cm console | Cm vmm
+.Cm guest | Cm netif | Cm vmm
 .Oc
 .Nm
 .Cm restart
 .Oo
-.Cm guest | Cm netif | Cm console | Cm vmm
+.Cm guest | Cm netif | Cm vmm
 .Oc
 .Nm
 .Cm status
@@ -233,9 +233,6 @@ Guest only, maintain the console device and the networking interface.
 Networking interface and guest.  That latter is required because the
 networking interface is bound to the virtual machine that runs the
 guest.
-.It Cm console
-Null-modem device and guest.  That latter is required because the
-null-modem device is bound to the virtual machine that runs the guest.
 .It Cm vmm
 The
 .Xr vmm 4
@@ -245,7 +242,7 @@ interface.
 .Pp
 The commands are as follows.
 .Bl -tag -width -indent
-.It Cm start Oo Cm guest | Cm netif | Cm console | Cm vmm Oc
+.It Cm start Oo Cm guest | Cm netif | Cm vmm Oc
 Start
 .Nm .
 By default, the
@@ -257,7 +254,7 @@ on the same device must not be configured.  Note that the
 target can work only if
 .Sy wifibox0
 networking interface has already been created.
-.It Cm stop Oo Cm guest | Cm netif | Cm console | Cm vmm Oc
+.It Cm stop Oo Cm guest | Cm netif | Cm vmm Oc
 Stop
 .Nm .
 Without the
@@ -267,7 +264,7 @@ parameter, the
 interface is destroyed and the guest is detached from the configured
 PCI wireless network device.  After that, the FreeBSD driver is free
 to take over the device.
-.It Cm restart Oo Cm guest | Cm netif | Cm console | Cm vmm Oc
+.It Cm restart Oo Cm guest | Cm netif | Cm vmm Oc
 Restart
 .Nm ,
 which is the sequential composition of the
@@ -277,14 +274,10 @@ and
 commands by default. The
 .Cm guest
 parameter is for the guest only.  This is recommended for applying
-system-level updates to the guest. The
+system-level updates to the guest.  The
 .Cm netif
 parameter is to recreate the networking interface and restart the
 guest.  The
-.Cm console
-parameter recreate the null-modem device and restarts the guest.  This
-is recommended when the console support is turned on in the
-configuration.  The
 .Cm vmm
 parameter is to restart the guest while reloading the
 .Xr vmm 4
@@ -302,8 +295,7 @@ Attach to the running guest with
 through a virtual serial port, implemented by
 .Xr nmdm 4 .
 This is recommended for troubleshooting problems with the guest in an
-interactive fashion.  It can also be used to perform updates, install
-or remove packages.  This has to be configured specifically in order
+interactive fashion.  This has to be configured specifically in order
 to work.  The actual way of logging into the system as an
 administrator depends on the VM image in use.  Most of the time the
 .Sy root
