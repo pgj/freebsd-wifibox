@@ -27,6 +27,7 @@ KERNEL_PATH=$(${SYSCTL} -n kern.module_path | ${SED} -E 's/^([^;]*);.*/\1/')
 : "${KLDLOAD:=/sbin/kldload}"
 : "${KLDUNLOAD:=/sbin/kldunload}"
 : "${KLDSTAT:=/sbin/kldstat}"
+: "${PCICONF:=/usr/sbin/pciconf}"
 : "${SHA256:=/sbin/sha256}"
 : "${MKNOD:=/sbin/mknod}"
 : "${NICE:=/usr/bin/nice}"
@@ -270,15 +271,19 @@ destroy_bridge() {
 
     _tap="$(get_tap_interface)"
 
-    log info "Destroying bridge interface: ${WIFIBOX_IF}"
-    ${IFCONFIG} ${WIFIBOX_IF} destroy 2>&1 | capture_output debug ifconfig
-
     if [ -n "${_tap}" ]; then
+	log info "Unlinking tap interface from ${WIFIBOX_IF}: ${_tap}"
+	${IFCONFIG} ${WIFIBOX_IF} deletem "${_tap}" 2>&1 | capture_output debug ifconfig
+
 	log info "Destroying linked tap interface: ${_tap}"
 	${IFCONFIG} "${_tap}" destroy 2>&1 | capture_output debug ifconfig
     else
 	log warn "No linked tap inteface found for ${WIFIBOX_IF}"
     fi
+
+    log info "Destroying bridge interface: ${WIFIBOX_IF}"
+    ${IFCONFIG} ${WIFIBOX_IF} destroy 2>&1 | capture_output debug ifconfig
+
 }
 
 create_nmdm() {
@@ -435,7 +440,9 @@ destroy_vm() {
     if [ -n "${_ppts}" ]; then
 	for ppt in ${_ppts}; do
 	    log info "Destroying bhyve PPT device: ${ppt}"
-	    if ! ${DEVCTL} clear driver -f "${ppt}" 2>&1 | capture_output debug devctl; then
+	    if ! (${PCICONF} -a "$ppt" 2>&1 | capture_output debug pciconf); then
+	        log debug "PPT device ${ppt} already destroyed"
+	    elif ! (${DEVCTL} clear driver -f "${ppt}" 2>&1 | capture_output debug devctl); then
 		log warn "PPT device ${ppt} could not be destroyed"
 	    fi
 	done
@@ -558,6 +565,8 @@ vm_manager() {
     local _slot
     local _bhyve_exit_code
     local _restart
+    local _kill_child
+    local _jobs
 
     assert_daemonized
 
@@ -734,9 +743,25 @@ vm_manager() {
 
     log debug "Nice priority: ${_nice_priority}"
     log debug "Arguments: ${_bhyve_args}"
-    ${NICE} -n ${_nice_priority} \
-	    ${BHYVE} ${_bhyve_args} 2>&1 | capture_output debug bhyve
+
+    _kill_child() {
+	_jobs="$(jobs -p)"
+
+	[ -n "$_jobs" ] && ${KILL} -SIGTERM $_jobs
+	exit 0
+    }
+
+    trap _kill_child SIGTERM
+
+    { ${NICE} -n ${_nice_priority} \
+	    ${BHYVE} ${_bhyve_args} 2>&1 | capture_output debug bhyve; } &
+    wait
+
+    trap '' SIGTERM
+
     _bhyve_exit_code="$?"
+
+#    destroy_nmdm
     destroy_vm
 
     case "${_bhyve_exit_code}" in
@@ -752,7 +777,6 @@ vm_manager() {
 
     [ -n "${_restart}" ] && exit 1
 
-    destroy_nmdm
     destroy_bridge
     quit_daemonization
 }
@@ -774,8 +798,8 @@ vm_stop() {
 	log warn "Guest could not be stopped gracefully"
     fi
 
-    log info "Waiting 3 seconds for the guest to stop"
-    ${SLEEP} 3 2>&1 | capture_output debug sleep
+    log info "Waiting 5 seconds for the guest to stop"
+    ${SLEEP} 5 2>&1 | capture_output debug sleep
 
     log info "Forcing shutdown of guest ${WIFIBOX_VM}"
     ${BHYVECTL} --force-poweroff --vm=${WIFIBOX_VM} 2>&1 | capture_output debug bhyvectl
@@ -875,10 +899,10 @@ wifibox_stop() {
 	uds_passthru_stop
 	show_progress
 
-	vm_stop
+	destroy_nmdm
 	show_progress
 
-	destroy_nmdm
+	vm_stop
 	show_progress
     fi
 
