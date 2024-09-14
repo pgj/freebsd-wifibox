@@ -58,7 +58,7 @@ possible:
   (MSI) because that is required for the PCI pass-through to work.
   USB wireless adapters are not supported.
 
-- A supported FreeBSD/amd64 system: 13.3-RELEASE or 14.0-RELEASE.
+- A supported FreeBSD/amd64 system: 13.3-RELEASE or 14.1-RELEASE.
   Later versions will also probably work, but your mileage may vary.
 
 - [`grub2-bhyve`] or the corresponding `sysutils/grub2-bhyve` FreeBSD
@@ -154,6 +154,7 @@ configurations:
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 | Intel Core i5-8250U | Realtek RTL8822BE | Lenovo YOGA 730 | 13.2-RELEASE |
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
+| Intel Core i7-6600U | Intel(R) Dual Band Wireless AC 8260 | Lenovo ThinkPad T470 | 14.1-RELEASE |
 | Intel Core i7-7500U | Intel(R) Dual Band Wireless AC 8265 | Lenovo ThinkPad X1 Gen5 | 13.2-RELEASE |
 | Intel Core i7-7700K | Intel(R) Dual Band Wireless AC 3168 | Desktop HP 820 NL | 13.2-RELEASE |
 | Intel Core i7-7820HQ | Intel(R) Wi-Fi 6E AX210/AX1675 | Dell Precision 7720 | 13.3-RELEASE, 14.1-RELEASE  |
