@@ -242,6 +242,7 @@ load_bhyve_conf_values() {
     passthru=
     console=no
     priority=50
+    stop_wait_max=10
 
     log info "Pulling bhyve options from configuration file"
     # shellcheck source=./etc/bhyve.conf.sample
@@ -252,6 +253,7 @@ load_bhyve_conf_values() {
     log debug "passthru=[${passthru}]"
     log debug "console=${console}"
     log debug "priority=${priority}"
+    log debug "stop_wait_max=${stop_wait_max}"
 
     _max_vmm_cpus=$(${SYSCTL} -n hw.vmm.maxcpu)
 
@@ -280,6 +282,10 @@ load_bhyve_conf_values() {
     assert_value_ranged_integer \
 	"bhyve.conf" "priority" 0 99 \
 	"${priority}"
+
+    assert_value_ranged_integer \
+	"bhyve.conf" "stop_wait_max" 1 60 \
+	"${stop_wait_max}"
 }
 
 has_bridge_interface() {
@@ -440,6 +446,10 @@ get_ppt_devices() {
 
 get_vm_manager_pid() {
     ${PGREP} -fx "daemon: ${VM_MANAGER_DAEMON_ID}\[[0-9]*\]"
+}
+
+get_vm_pid() {
+    ${PGREP} -fx "bhyve: ${WIFIBOX_VM}"
 }
 
 destroy_vm() {
@@ -736,6 +746,7 @@ vm_stop() {
     local _ppt
     local _pid
     local _gpid
+    local _vm_pid
 
     _pid="$(get_vm_manager_pid)"
 
@@ -750,14 +761,26 @@ vm_stop() {
 	return 1
     fi
 
+    load_bhyve_conf_values
+
     if ! (${KILL} -TERM -"${_gpid}" 2>&1 | capture_output debug kill); then
 	log warn "Guest could not be stopped gracefully"
+    else
+	for i in $(seq 1 ${stop_wait_max}); do
+	    _vm_pid=$(get_vm_pid)
+
+	    log info "Check if the guest is still running [${i}/${stop_wait_max}]: ${_vm_pid}"
+
+	    if [ -z "${_vm_pid}" ]; then
+		log info "Guest has stopped.  All good!"
+		return 0
+	    fi
+
+	    ${SLEEP} 1 2>&1 | capture_output debug sleep
+	done
     fi
 
-    log info "Waiting 3 seconds for the guest to stop"
-    ${SLEEP} 3 2>&1 | capture_output debug sleep
-
-    log info "Forcing shutdown of guest ${WIFIBOX_VM}"
+    log info "Grace period over, forcing shutdown of guest ${WIFIBOX_VM}"
     ${BHYVECTL} --force-poweroff --vm=${WIFIBOX_VM} 2>&1 | capture_output debug bhyvectl
     destroy_vm
 }

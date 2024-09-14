@@ -30,3 +30,10 @@ passthru=
 # be set in the range of 0 to 99, where 0 is the highest possible
 # priority while 99 is the lowest.
 priority=50
+
+# The maximal length of the grace period for waiting the bhyve(8)
+# process to exit on signalling ACPI power-off.  This is in seconds,
+# approximately, within the range of 1 to 60.  If the guest does not
+# stop after the period is over, a forceful shutdown is attempted,
+# which might leave the hardware in inconsistent state.
+stop_wait_max=10
