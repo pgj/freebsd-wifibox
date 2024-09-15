@@ -154,6 +154,7 @@ configurations:
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 | Intel Core i5-8250U | Realtek RTL8822BE | Lenovo YOGA 730 | 13.2-RELEASE |
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
+| Intel Core i7-4870HQ | Broadcom BCM43602 | Apple MacBook Pro 11.4 | 13.3-RELEASE |
 | Intel Core i7-6600U | Intel(R) Dual Band Wireless AC 8260 | Lenovo ThinkPad T470 | 14.1-RELEASE |
 | Intel Core i7-7500U | Intel(R) Dual Band Wireless AC 8265 | Lenovo ThinkPad X1 Gen5 | 13.2-RELEASE |
 | Intel Core i7-7700K | Intel(R) Dual Band Wireless AC 3168 | Desktop HP 820 NL | 13.2-RELEASE |
