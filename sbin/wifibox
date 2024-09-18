@@ -773,6 +773,7 @@ vm_stop() {
 
 	    if [ -z "${_vm_pid}" ]; then
 		log info "Guest has stopped.  All good!"
+		destroy_vm
 		return 0
 	    fi
 
