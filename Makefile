@@ -17,6 +17,7 @@ CHMOD=/bin/chmod
 GZIP=/usr/bin/gzip
 GIT=$(LOCALBASE)/bin/git
 SHELLCHECK=$(LOCALBASE)/bin/shellcheck
+UNAME=/usr/bin/uname
 
 .if !defined(VERSION)
 VERSION!=	$(GIT) describe --tags --always
@@ -26,6 +27,17 @@ VERSION!=	$(GIT) describe --tags --always
 _GUEST_MAN=	${GUEST_MAN}
 .else
 _GUEST_MAN=	../man8/wifibox.8.gz
+.endif
+
+.if !defined(DEVD_FIX)
+_FREEBSD_VERSION!=	$(UNAME) -U
+
+.if $(_FREEBSD_VERSION) > 1400089
+DEVD_FIX=	#
+.else
+DEVD_FIX=	please
+.endif
+
 .endif
 
 SUB_LIST=	PREFIX=$(PREFIX) \
@@ -57,9 +69,12 @@ install:
 
 	$(MKDIR) -p $(ETCDIR)/wifibox
 	$(CP) -R etc/* $(ETCDIR)/wifibox/
+
+.if defined(DEVD_FIX)
 	$(MKDIR) -p $(ETCDIR)/devd
 	$(SED) ${_SUB_LIST_EXP} devd/wifibox.conf.sample \
 		> $(ETCDIR)/devd/wifibox.conf.sample
+.endif
 
 	$(MKDIR) -p $(RCDIR)
 	$(SED) ${_SUB_LIST_EXP} rc.d/wifibox > $(RCDIR)/wifibox

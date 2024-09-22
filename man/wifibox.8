@@ -1,4 +1,4 @@
-.Dd August 11, 2024
+.Dd September 22, 2024
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -200,12 +200,14 @@ otherwise the link will stop working.
 .Pp
 In addition to that, because a
 .Xr devd.conf 5
-file is installed as part of the application,
+file might be installed as part of the application,
 .Xr devd 8
-must be restarted so the additional configuration file can be read.
-These bits are responsible to managing the recovery in case of
-suspend/resume events.  When this feature is not in use, this step
-may be omitted.
+may have to be restarted so the additional configuration file can be
+read.  These bits are responsible to managing the recovery in case of
+suspend/resume events.  When this feature is not in use, or not
+required, for example, for
+.Fx 14.0
+or later, this step may be safely omitted.
 .Bd -literal -offset indent
 # service devd restart
 .Ed

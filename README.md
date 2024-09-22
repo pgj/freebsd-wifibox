@@ -90,7 +90,8 @@ mostly recommended for development and testing.
     LOCALBASE=<prefix of the grub2-bhyve and socat packages> \
     GUEST_ROOT=<guest disk image location> \
     GUEST_MAN=<guest manual page location> \
-    RECOVERY_METHOD=<method to use on suspend and resume>
+    RECOVERY_METHOD=<method to use on suspend and resume> \
+    DEVD_FIX=<add extra devd.conf(5) configuration to handle suspend>
 ```
 
 By default, `PREFIX` is set to `/usr/local`.  In addition to that, it
@@ -124,6 +125,15 @@ Wifibox should be revived on a suspend/resume pair of events.
   reverse on resume.
 - The recovery mechanism itself could be disabled by setting this
   value to be empty.
+
+The `DEVD_FIX` variable controls the deployment of a fix for handling
+the ACPI suspend event.  In older FreeBSD versions, suspend will not
+automatically trigger a call for the `service wifibox suspend` command
+so that has to be explicitly configured.  This has been added for
+FreeBSD 14.0 hence it is not required any more from that version
+onwards.  Set it to an empty value to disable this fix, otherwise the
+default value is going to be determined based on the OS version where
+the build is run.
 
 ## Documentation
 
