@@ -64,6 +64,8 @@ WIFIBOX_VM="wifibox"
 UDS_PASSTHRU_DAEMON_ID="wifibox-uds-passthru"
 VM_MANAGER_DAEMON_ID="wifibox-vm-manager"
 
+VMM_VM_PATH="/dev/vmm/${WIFIBOX_VM}"
+
 log() {
     local _type="$1"
     local _level
@@ -444,41 +446,38 @@ get_ppt_devices() {
     fi
 }
 
-get_vm_manager_pid() {
-    ${PGREP} -fx "daemon: ${VM_MANAGER_DAEMON_ID}\[[0-9]*\]"
-}
-
 get_vm_pid() {
     ${PGREP} -fx "bhyve: ${WIFIBOX_VM}"
 }
 
 destroy_vm() {
-    log info "Destroying guest ${WIFIBOX_VM}"
-
-    ${BHYVECTL} --destroy --vm=${WIFIBOX_VM} 2>&1 | capture_output info bhyvectl
-    ${SLEEP} 1 2>&1 | capture_output debug sleep
-
     _ppts="$(get_ppt_devices)"
+
+    log info "Destroying bhyve PPT devices: [${_ppts}]"
 
     if [ -n "${_ppts}" ]; then
 	for ppt in ${_ppts}; do
-	    log info "Destroying bhyve PPT device: ${ppt}"
 	    if ! (${DEVCTL} clear driver -f "${ppt}" 2>&1 | capture_output debug devctl); then
 		log warn "PPT device ${ppt} could not be destroyed"
+	    else
+		log info "${ppt}: destroyed"
 	    fi
 	done
     else
 	log warn "No bhyve PPT device could be found"
     fi
+
+    log info "Destroying guest ${WIFIBOX_VM}"
+    ${BHYVECTL} --destroy --vm=${WIFIBOX_VM} 2>&1 | capture_output info bhyvectl
 }
 
 vm_start() {
     local _pid
 
-    _pid="$(get_vm_manager_pid)"
+    _pid="$(get_vm_pid)"
 
     if [ -n "${_pid}" ]; then
-	log warn "Guest is already run by PID ${_pid}, left intact"
+	log warn "Guest is already run as PID ${_pid}, left intact"
 	return 1
     fi
 
@@ -488,7 +487,7 @@ vm_start() {
     log info "Waiting for bhyve to start up"
 
     ${SLEEP} 1 2>&1 | capture_output debug sleep
-    _pid="$(get_vm_manager_pid)"
+    _pid="$(get_vm_pid)"
 
     if [ -z "${_pid}" ]; then
 	log error "Guest could not be started"
@@ -745,33 +744,27 @@ vm_manager() {
 vm_stop() {
     local _ppt
     local _pid
-    local _gpid
-    local _vm_pid
 
-    _pid="$(get_vm_manager_pid)"
+    _pid="$(get_vm_pid)"
 
-    if [ -n "${_pid}" ]; then
-	_gpid="$(${PS} -o pgid -p "${_pid}" | ${TAIL} -1 | ${GREP} -o '[0-9]*')"
-    fi
+    log info "Stopping guest ${WIFIBOX_VM} run as PID [${_pid}]"
 
-    log info "Stopping guest ${WIFIBOX_VM}, managed by PID [${_pid}], GPID [${_gpid}]"
-
-    if [ -z "${_gpid}" ]; then
+    if [ -z "${_pid}" ]; then
 	log warn "Guest is not running, hence not stopped"
 	return 1
     fi
 
     load_bhyve_conf_values
 
-    if ! (${KILL} -TERM -"${_gpid}" 2>&1 | capture_output debug kill); then
+    if ! (${KILL} -TERM "${_pid}" 2>&1 | capture_output debug kill); then
 	log warn "Guest could not be stopped gracefully"
     else
 	for i in $(seq 1 ${stop_wait_max}); do
-	    _vm_pid=$(get_vm_pid)
+	    _pid=$(get_vm_pid)
 
-	    log info "Check if the guest is still running [${i}/${stop_wait_max}]: ${_vm_pid}"
+	    log info "Check if the guest is still running [${i}/${stop_wait_max}]: ${_pid}"
 
-	    if [ -z "${_vm_pid}" ]; then
+	    if [ -z "${_pid}" ] && [ ! -c "${VMM_VM_PATH}" ]; then
 		log info "Guest has stopped.  All good!"
 		return 0
 	    fi
@@ -919,7 +912,7 @@ wifibox_restart() {
 	exit 1
     fi
 
-    _pid="$(get_vm_manager_pid)"
+    _pid="$(get_vm_pid)"
 
     if [ -z "${_pid}" ]; then
 	log warn "No running instance found that could be restarted"
@@ -975,10 +968,10 @@ wifibox_status() {
 
     log info "Begin: wifibox status"
 
-    _pid="$(get_vm_manager_pid)"
+    _pid="$(get_vm_pid)"
 
     if [ -n "${_pid}" ]; then
-	output "wifibox is run by PID ${_pid}"
+	output "wifibox is run as PID ${_pid}"
     else
 	output "wifibox is not run"
 	return 1
@@ -991,8 +984,8 @@ wifibox_console() {
     local _pid
 
     log info "Begin: wifibox console"
-    _pid="$(get_vm_manager_pid)"
-    log debug "Guest is run by ${_pid}"
+    _pid="$(get_vm_pid)"
+    log debug "Guest is run as ${_pid}"
 
     if [ -z "${_pid}" ]; then
 	log error "There is no guest to attach to"
