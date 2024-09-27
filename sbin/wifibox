@@ -48,6 +48,7 @@ KERNEL_PATH=$(${SYSCTL} -n kern.module_path | ${SED} -E 's/^([^;]*);.*/\1/')
 : "${NETSTAT:=/usr/bin/netstat}"
 : "${READLINK:=/usr/bin/readlink}"
 : "${LS:=/bin/ls}"
+: "${SEQ:=/usr/bin/seq}"
 
 : "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
 : "${SOCAT:=${LOCALBASE}/bin/socat}"
@@ -477,6 +478,7 @@ destroy_vm() {
 
 vm_start() {
     local _pid
+    local _start_wait_max=5
 
     _pid="$(get_vm_pid)"
 
@@ -488,19 +490,22 @@ vm_start() {
     ${DAEMON} -r -t "${VM_MANAGER_DAEMON_ID}" \
 	"${0}" _manage_vm
 
-    log info "Waiting for bhyve to start up"
+    for i in $(${SEQ} 0 ${_start_wait_max}); do
+	_pid=$(get_vm_pid)
 
-    ${SLEEP} 1 2>&1 | capture_output debug sleep
-    _pid="$(get_vm_pid)"
+	log info "Waiting for bhyve to start up: [${i}/${_start_wait_max}]: [${_pid}]"
+
+	if [ -n "${_pid}" ]; then
+	    log info "Guest ${WIFIBOX_VM} has started as PID ${_pid}"
+	    break
+	fi
+
+	${SLEEP} 1 2>&1 | capture_output debug sleep
+    done
 
     if [ -z "${_pid}" ]; then
-	log error "Guest could not be started"
-	exit 4
-    else
-	log info "Guest ${WIFIBOX_VM} has started up"
+	log warn "Guest is not up after ${_start_wait_max} seconds"
     fi
-
-    log info "Guest is managed by PID ${_pid}"
 }
 
 assert_daemonized() {
@@ -764,7 +769,7 @@ vm_stop() {
     if ! (${KILL} -TERM "${_pid}" 2>&1 | capture_output debug kill); then
 	log warn "Guest could not be stopped gracefully"
     else
-	for i in $(seq 1 ${stop_wait_max}); do
+	for i in $(${SEQ} 1 ${stop_wait_max}); do
 	    _pid=$(get_vm_pid)
 
 	    log info "Check if the guest is still running [${i}/${stop_wait_max}]: [${_pid}]"
