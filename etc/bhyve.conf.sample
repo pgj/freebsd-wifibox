@@ -36,4 +36,4 @@ priority=50
 # approximately, within the range of 1 to 60.  If the guest does not
 # stop after the period is over, a forceful shutdown is attempted,
 # which might leave the hardware in inconsistent state.
-stop_wait_max=10
+stop_wait_max=30
