@@ -1,0 +1,19 @@
+name: Build Checks
+on: [push]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    name: Sanity check CI job
+    steps:
+    - uses: actions/checkout@v4
+    - name: ShellCheck results
+      id: shellcheck
+      uses: vmactions/freebsd-vm@v1
+      with:
+        usesh: true
+        prepare: |
+          pkg install -y hs-ShellCheck
+
+        run: |
+          make VERSION=9.9.9 shellcheck
