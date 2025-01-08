@@ -1,4 +1,4 @@
-.Dd September 22, 2024
+.Dd January 8, 2025
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -33,10 +33,14 @@ deploys a Linux guest operating system with the help of
 and attaches its driver to a wireless network device on the host system
 via the PCI pass-through capabilities of the
 .Xr vmm 4
-kernel module.  This way the original FreeBSD PCI wireless network
-card driver can be replaced for the performance and stability of the
-one provided by the Linux kernel, or put into use if the device is not
-supported by FreeBSD at all.
+kernel module.
+This way the original
+.Fx
+PCI wireless network card driver can be replaced for the performance
+and stability of the one provided by the Linux kernel, or put into use
+if the device is not supported by
+.Fx
+at all.
 .Pp
 Once the guest has been started up successfully,
 .Nm
@@ -55,11 +59,12 @@ and stop on shutdown.
 .Pp
 Note that
 .Nm
-is only responsible for managing and supervising the Linux guest. Due
-to its design, it does not have any knowledge about how the traffic is
-presented to the host.  It might be based on Network Address
-Translation (NAT) or it might implement bridged networking.  Please
-check the
+is only responsible for managing and supervising the Linux guest.
+Due to its design, it does not have any knowledge about how the
+traffic is presented to the host.
+It might be based on Network Address Translation (NAT) or it might
+implement bridged networking.
+Please check the
 .Xr wifibox-guest 5
 manual page for more information to learn about the actual approach.
 .Sh CONFIGURATION
@@ -67,14 +72,17 @@ After the installation, review and revisit the sample configuration
 files provided in the
 .Pa %%PREFIX%%/etc/wifibox
 directory and follow the instructions to create a working
-configuration.  The directory layout and the contents of the files
-depend on the guest used.  Make sure that the networking configuration
-does not conflict with that of the host in any case.
+configuration.
+The directory layout and the contents of the files depend on the guest
+used.
+Make sure that the networking configuration does not conflict with
+that of the host in any case.
 .Pp
 By default, PCI pass-through is disabled for AMD-based hardware, hence
 it must be explicitly enabled via the corresponding
-.Xr syctl 8
-variable.  This can be done by adding the following line to either
+.Xr sysctl 8
+variable.
+This can be done by adding the following line to either
 .Pa /etc/sysctl.conf
 or
 .Pa /boot/loader.conf
@@ -95,11 +103,15 @@ work as a system service, the following line has to be added to
 wifibox_enable="YES"
 .Ed
 .Pp
-At the same time, make sure that no FreeBSD driver is configured for
-the same device and remove all the related settings from there.  The
+At the same time, make sure that no
+.Fx
+driver is configured for the same device and remove all the related
+settings from there.
+The
 .Xr devmatch 8
 utility might be used to stop any conflicting drivers from loading
-automatically.  For example, the
+automatically.
+For example, the
 .Xr iwm 4
 and
 .Xr iwlwifi 4
@@ -111,8 +123,8 @@ devmatch_enable="YES"
 devmatch_blocklist="if_iwm if_iwlwifi"
 .Ed
 .Pp
-Note these settings will only take effect on the next boot.  Until
-then the
+Note these settings will only take effect on the next boot.
+Until then the
 .Nm devmatch
 service must be started and the drivers should be removed manually by
 using
@@ -150,7 +162,8 @@ defaultroute_delay="0"
 .Ed
 .Pp
 If preferred, static IPv4 address configuration is possible with this
-method.  Assume that
+method.
+Assume that
 .Sy wifibox0
 is configured as 10.0.0.1/24 on the guest's side, and the host wants
 to use the 10.0.0.2/24 IPv4 address.
@@ -203,9 +216,10 @@ In addition to that, because a
 file might be installed as part of the application,
 .Xr devd 8
 may have to be restarted so the additional configuration file can be
-read.  These bits are responsible to managing the recovery in case of
-suspend/resume events.  When this feature is not in use, or not
-required, for example, for
+read.
+These bits are responsible to managing the recovery in case of
+suspend/resume events.
+When this feature is not in use, or not required, for example, for
 .Fx 14.0
 or later, this step may be safely omitted.
 .Bd -literal -offset indent
@@ -222,8 +236,8 @@ the
 script itself are listed below for the reference.
 .Pp
 For the
-.Cm start,
-.Cm stop,
+.Cm start ,
+.Cm stop ,
 and
 .Cm restart
 commands, it is possible to specify a target, therefore limit the
@@ -232,9 +246,9 @@ scope of the operation in different ways.
 .It Cm guest
 Guest only, maintain the console device and the networking interface.
 .It Cm netif
-Networking interface and guest.  That latter is required because the
-networking interface is bound to the virtual machine that runs the
-guest.
+Networking interface and guest.
+That latter is required because the networking interface is bound to
+the virtual machine that runs the guest.
 .It Cm vmm
 The
 .Xr vmm 4
@@ -250,8 +264,11 @@ Start
 By default, the
 .Sy wifibox0
 interface is created and the guest is attached to the configured PCI
-wireless network device.  The network interface of the FreeBSD driver
-on the same device must not be configured.  Note that the
+wireless network device.
+The network interface of the
+.Fx
+driver on the same device must not be configured.
+Note that the
 .Cm guest
 target can work only if
 .Sy wifibox0
@@ -264,8 +281,10 @@ Without the
 parameter, the
 .Sy wifibox0
 interface is destroyed and the guest is detached from the configured
-PCI wireless network device.  After that, the FreeBSD driver is free
-to take over the device.
+PCI wireless network device.
+After that, the
+.Fx
+driver is free to take over the device.
 .It Cm restart Oo Cm guest | Cm netif | Cm vmm Oc
 Restart
 .Nm ,
@@ -273,20 +292,23 @@ which is the sequential composition of the
 .Cm stop
 and
 .Cm start
-commands by default. The
+commands by default.
+The
 .Cm guest
-parameter is for the guest only.  This is recommended for applying
-system-level updates to the guest.  The
+parameter is for the guest only.
+This is recommended for applying system-level updates to the guest.
+The
 .Cm netif
 parameter is to recreate the networking interface and restart the
-guest.  The
+guest.
+The
 .Cm vmm
 parameter is to restart the guest while reloading the
 .Xr vmm 4
 kernel module, maintain the console device and the networking
-interface.  This is a workaround for the guest to recover from a state
-where the wireless device becomes unresponsive after the ACPI resume
-event.
+interface.
+This is a workaround for the guest to recover from a state where the
+wireless device becomes unresponsive after the ACPI resume event.
 .It Cm status
 Check and display if
 .Nm
@@ -297,72 +319,84 @@ Attach to the running guest with
 through a virtual serial port, implemented by
 .Xr nmdm 4 .
 This is recommended for troubleshooting problems with the guest in an
-interactive fashion.  This has to be configured specifically in order
-to work.  The actual way of logging into the system as an
-administrator depends on the VM image in use.  Most of the time the
+interactive fashion.
+This has to be configured specifically in order to work.
+The actual way of logging into the system as an administrator depends
+on the VM image in use.
+Most of the time the
 .Sy root
-user with a blank password works.  See
+user with a blank password works.
+See
 .Xr wifibox-guest 5
 for more information.
 .It Cm version
 Display version of
 .Nm
-and the SHA-256 hash of the guest disk image.  The output is suitable
-for reporting errors.  Note that custom images are not supported.
+and the SHA-256 hash of the guest disk image.
+The output is suitable for reporting errors.
+Note that custom images are not supported.
+.El
+.Sh EXIT STATUS
+The exit status is 0 on success, and >0 if any of the commands fail.
 .Sh DIAGNOSTICS
 If
 .Nm
 does not have behave in the expected way, check
 .Pa /var/log/wifibox.log
-for errors.  This file holds messages about the progress of each
-executed command, and their amount depends on the configured level of
-logging.  The level of logging could be configured in
+for errors.
+This file holds messages about the progress of each executed command,
+and their amount depends on the configured level of logging.
+The level of logging could be configured in
 .Pa %%PREFIX%%/etc/wifibox/core.conf ,
 please consult this file for the details.
 .Pp
 The log files of the guest are exported to the host and they are made
 available under the
 .Pa /var/run/wifibox/appliance/log
-directory.  There it is recommended to check the
+directory.
+There it is recommended to check the
 .Pa /var/run/wifibox/appliance/log/dmesg
 file for messages related to the boot sequence, such as driver
 initialization, and the
 .Pa /var/run/wifibox/appliance/log/messages
 file for the run-time system messages, which are usually emitted
-by the daemons.  If all else fails, use the
+by the daemons.
+If all else fails, use the
 .Cm console
-command to connect to the guest.  In that case, please study the
+command to connect to the guest.
+In that case, please study the
 .Xr wifibox-guest 5
 manual page before proceeding.
-.Sh EXIT STATUS
-The exit status is 0 on success, and >0 if any of the commands fail.
 .Sh SEE ALSO
-.Xr bhyve 8 ,
-.Xr vmm 4 ,
+.Xr cu 1 ,
 .Xr bridge 4 ,
-.Xr sysctl 8 ,
-.Xr sysctl.conf 5 ,
+.Xr nmdm 4 ,
+.Xr vmm 4 ,
+.Xr devd.conf 5 ,
 .Xr loader.conf 5 ,
 .Xr rc.conf 5 ,
+.Xr sysctl.conf 5 ,
+.Xr wifibox-guest 5 ,
+.Xr bhyve 8 ,
+.Xr devd 8 ,
 .Xr devmatch 8 ,
 .Xr kldunload 8 ,
-.Xr devd.conf 5 ,
-.Xr devd 8 ,
-.Xr cu 1 ,
-.Xr nmdm 4 ,
-.Xr wifibox-guest 5
+.Xr sysctl 8
+.Sh AUTHORS
+.An Gábor Páli Aq Mt pali.gabor@gmail.com
 .Sh CAVEATS
 .Nm
 supports only a single wireless network device at a time, and it has
-to be a PCI one.  USB devices are not supported, and
+to be a PCI one.
+USB devices are not supported, and
 .Nm
 cannot be launched multiple times.
 .Pp
 The
 .Cm restart vmm
 command should be used with caution, because it may crash the system
-when it has not been in a sleep state.  Hence it is best to use in
-combination with
+when it has not been in a sleep state.
+Hence it is best to use in combination with
 .Xr devd 8 .
 .Pp
 The
@@ -376,12 +410,13 @@ kernel module could not be unloaded in such cases.
 The
 .Cm restart vmm
 command may not work properly on some systems and its repeated use can
-cause the PCI device to be lost completely until the next boot.  As a
-workaround, it is worth to use the combination of
+cause the PCI device to be lost completely until the next boot.
+As a workaround, it is worth to use the combination of
 .Cm stop guest
 (on suspend) and
 .Cm start guest
-(on resume) instead.  In some other cases, it is better to unload the
+(on resume) instead.
+In some other cases, it is better to unload the
 .Xr vmm 4
 kernel module to suspend with the
 .Cm stop vmm
@@ -393,9 +428,8 @@ The PCI pass-through implementation of
 .Xr bhyve 8
 may not be able to cooperate with the Linux system in the guest due to
 lack of emulation of certain quirks and features that are required to
-make the driver work.  Sometimes this can cause strange and unexpected
-error messages.  Always try the latest available version of
+make the driver work.
+Sometimes this can cause strange and unexpected error messages.
+Always try the latest available version of
 .Xr bhyve 8
 when this happens.
-.Sh AUTHORS
-.An Gábor Páli Aq Mt pali.gabor@gmail.com

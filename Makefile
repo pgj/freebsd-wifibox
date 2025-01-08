@@ -18,6 +18,12 @@ GZIP=/usr/bin/gzip
 GIT=$(LOCALBASE)/bin/git
 SHELLCHECK=$(LOCALBASE)/bin/shellcheck
 UNAME=/usr/bin/uname
+IGOR=${LOCALBASE}/bin/igor
+ASPELL=${LOCALBASE}/bin/aspell
+MANDOC=/usr/bin/mandoc
+ECHO=/bin/echo
+TOUCH=/usr/bin/touch
+RM=/bin/rm -f
 
 .if !defined(VERSION)
 VERSION!=	$(GIT) describe --tags --always
@@ -61,6 +67,7 @@ SUB_LIST+=	SUSPEND_CMD=/usr/bin/true \
 
 _SUB_LIST_EXP= 	${SUB_LIST:S/$/!g/:S/^/ -e s!%%/:S/=/%%!/}
 _SCRIPT_SRC=	sbin/wifibox
+_MAN_SRC=	man/wifibox.8
 
 install:
 	$(MKDIR) -p $(BINDIR)
@@ -80,7 +87,7 @@ install:
 	$(SED) ${_SUB_LIST_EXP} rc.d/wifibox > $(RCDIR)/wifibox
 	$(CHMOD) 555 $(RCDIR)/wifibox
 
-	$(SED) ${_SUB_LIST_EXP} man/wifibox.8 \
+	$(SED) ${_SUB_LIST_EXP} ${_MAN_SRC} \
 		| $(GZIP) -c > $(MANDIR)/man8/wifibox.8.gz
 	$(LN) -s ${_GUEST_MAN} $(MANDIR)/man5/wifibox-guest.5.gz
 
@@ -90,3 +97,12 @@ clean: ;
 
 shellcheck:
 	@$(SHELLCHECK) -x ${_SCRIPT_SRC}
+
+mancheck:
+	@${ECHO} mandoc -T lint
+	# Create a dummy manual page to suppress the `mandoc` warning
+	@${TOUCH} wifibox-guest.5
+	@$(SED) ${_SUB_LIST_EXP} ${_MAN_SRC} | ${MANDOC} -T lint
+	@${RM} wifibox-guest.5
+	@${ECHO} igor
+	@$(SED) ${_SUB_LIST_EXP} ${_MAN_SRC} | ${IGOR}
