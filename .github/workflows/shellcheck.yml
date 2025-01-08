@@ -1,15 +1,16 @@
-name: Build Checks
-on: [push]
+name: ShellCheck
+on:
+  push:
+    paths:
+      - 'sbin/**'
+      - '.github/workflows/shellcheck.yml'
 
 jobs:
-  checks:
+  Checks:
     runs-on: ubuntu-latest
-    name: Sanity check CI job
     steps:
     - uses: actions/checkout@v4
-    - name: ShellCheck results
-      id: shellcheck
-      uses: vmactions/freebsd-vm@v1
+    - uses: vmactions/freebsd-vm@v1
       with:
         usesh: true
         prepare: |
