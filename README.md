@@ -152,10 +152,10 @@ configurations:
 | CPU | Wireless NIC | Model | FreeBSD |
 | :-- | :----------- | :---- | :------ |
 | AMD A6-9225 | Realtek RTL8821CE | Lenovo IdeaPad 330-15AST | 13.1-RELEASE, 14-CURRENT |
-| AMD Ryzen 5 5600G | Intel Wi-Fi 6 AX-200 | ASUS ROG STRIX B550-I GAMING | 13-STABLE, 14-CURRENT |
-| AMD Ryzen 7 5700U | Realtek RTL8852AE | HP 255 G8 | 13.2-RELEASE |
 | AMD Ryzen 3 5300U | Realtek RTL8852CE | HP HP Laptop 15s-eq2xxx | 14.1-RELEASE |
+| AMD Ryzen 5 5600G | Intel Wi-Fi 6 AX-200 | ASUS ROG STRIX B550-I GAMING | 13-STABLE, 14-CURRENT |
 | AMD Ryzen 5 5600G | AMD RZ608 Wi-Fi 6E (MediaTek MT7921K) | ASUS ROG STRIX B550-I GAMING | 13-STABLE, 14-CURRENT |
+| AMD Ryzen 7 5700U | Realtek RTL8852AE | HP 255 G8 | 13.2-RELEASE |
 | AMD Ryzen 7 5700X | Intel Wi-Fi 6 AX-200 | GigaByte X570S | 13-STABLE, 14-CURRENT |
 | AMD Ryzen 7 5700X | AMD RZ608 Wi-Fi 6E (MediaTek MT7921K) | GigaByte X570S | 13-STABLE, 14-CURRENT |
 | AMD Ryzen 7 5825U | Realtek RTL8852BE | HP Laptop 15s-eq3636nz | 13.2-RC3 |
