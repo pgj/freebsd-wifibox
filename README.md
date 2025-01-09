@@ -166,12 +166,13 @@ configurations:
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
 | Intel Core i7-4870HQ | Broadcom BCM43602 | Apple MacBook Pro 11.4 | 13.3-RELEASE |
 | Intel Core i7-6600U | Intel(R) Dual Band Wireless AC 8260 | Lenovo ThinkPad T470 | 14.1-RELEASE |
-| Intel Core i7-7500U | Intel(R) Dual Band Wireless AC 8265 | Lenovo ThinkPad X1 Gen5 | 13.2-RELEASE |
+| Intel Core i7-7500U | Intel(R) Dual Band Wireless AC 8265 | Lenovo ThinkPad X1 Carbon Gen5 | 13.2-RELEASE |
 | Intel Core i7-7700K | Intel(R) Dual Band Wireless AC 3168 | Desktop HP 820 NL | 13.2-RELEASE |
 | Intel Core i7-7820HQ | Intel(R) Wi-Fi 6E AX210/AX1675 | Dell Precision 7720 | 13.3-RELEASE, 14.1-RELEASE  |
 | Intel Core i7-8565U | Qualcomm Atheros QCA6174 | Dell XPS 9380 | 13-STABLE |
 | Intel Core i7-8650U | Intel(R) Dual Band Wireless AC 8265 | Lenovo ThinkPad T480 | 13.1-RELEASE |
 | Intel Core i7-8665U | Intel(R) Dual Band Wireless AC 9560 | Lenovo ThinkPad X1 Carbon | GhostBSD 24.01.1 |
+| Intel Core i7-1185G7 | Intel(R) Wi-Fi 6 AX201 | Lenovo ThinkPad X1 Carbon Gen9 | 14.2-RELEASE |
 
 Feel free to submit a pull request or write an email to have your
 configuration added here!
