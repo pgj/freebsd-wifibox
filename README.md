@@ -173,6 +173,7 @@ configurations:
 | Intel Core i7-8565U | Qualcomm Atheros QCA6174 | Dell XPS 9380 | 13-STABLE |
 | Intel Core i7-8650U | Intel(R) Dual Band Wireless AC 8265 | Lenovo ThinkPad T480 | 13.1-RELEASE |
 | Intel Core i7-8665U | Intel(R) Dual Band Wireless AC 9560 | Lenovo ThinkPad X1 Carbon | GhostBSD 24.01.1 |
+| Intel Core i7-10850H | Intel(R) Wi-Fi 6 AX201 | Dell Precision 7550 | 14.2-STABLE |
 | Intel Core i7-1185G7 | Intel(R) Wi-Fi 6 AX201 | Lenovo ThinkPad X1 Carbon Gen9 | 14.2-RELEASE |
 
 Feel free to submit a pull request or write an email to have your
