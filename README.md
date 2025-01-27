@@ -159,6 +159,7 @@ configurations:
 | AMD Ryzen 7 5700X | Intel Wi-Fi 6 AX-200 | GigaByte X570S | 13-STABLE, 14-CURRENT |
 | AMD Ryzen 7 5700X | AMD RZ608 Wi-Fi 6E (MediaTek MT7921K) | GigaByte X570S | 13-STABLE, 14-CURRENT |
 | AMD Ryzen 7 5825U | Realtek RTL8852BE | HP Laptop 15s-eq3636nz | 13.2-RC3 |
+| AMD Ryzen 9 9950X | Intel Wi-Fi 6E AX210 | Minisforum MS-A1-N0CPUR | 14.2-RELEASE |
 | Intel Core i5-3210M | Broadcom BCM4331 | Apple MacBook Pro A1278 | 13.2-RELEASE |
 | Intel Core i5-5300U | Intel Wireless 7265 | Lenovo ThinkPad T450 | 13.1-RELEASE |
 | Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo ThinkPad X270 | 13.4-RELEASE, 14.1-RELEASE, 15-CURRENT (snapshot `20240926-6a4f0c063718-272495`) |
