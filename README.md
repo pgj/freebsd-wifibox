@@ -28,6 +28,10 @@ Wifibox tries to implement as a single easy-to-use software package.
 
 - A workaround is supplied for laptops to support suspend/resume.
 
+For more information on the background and the high-level overview of
+Wifibox, please read the [article] in the November/December 2024
+edition of the FreeBSD Journal on Virtualization.
+
 ## Warning
 
 *This is a work-in-progress experimental software project without any
@@ -187,3 +191,4 @@ configuration added here!
 [`net/wpa_supplicant_gui`]: https://cgit.freebsd.org/ports/tree/net/wpa_supplicant_gui
 [`grub2-bhyve`]: https://github.com/grehan-freebsd/grub2-bhyve
 [`socat`]: http://www.dest-unreach.org/socat/
+[article]: https://github.com/pgj/freebsd-wifibox/releases/download/freebsd-journal-2024-06/freebsd-journal-wifibox.pdf
