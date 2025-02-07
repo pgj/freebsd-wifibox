@@ -171,20 +171,26 @@ assert_kmod_loaded() {
 
     log debug "Check location: kmod=${_kmod}, kmod_file=${_kmod_file}"
 
-    if ${KLDSTAT} -q -m "${_kmod}"; then
+    if (${KLDSTAT} -q -m "${_kmod}" | capture_output debug kldstat); then
 	_kmod_path="$(get_kmod_path "${_kmod}")"
-	log info "${_kmod}.ko is expected at path: ${_kmod_file}"
-	log info "${_kmod}.ko is found at path: ${_kmod_path}"
 
-	if [ "${_kmod_path}" != "${_kmod_file}" ] && ! ${KLDUNLOAD} "${_kmod}"; then
-	    log error "${_kmod}.ko is loaded from a different location, but cannot be replaced"
-	    exit 127
+	if [ -z "${_kmod_path}" ]; then
+	    log info "${_kmod}.ko is built into the kernel, ignoring ${_kmod_file}"
+	else
+	    log info "${_kmod}.ko is expected at path: ${_kmod_file}"
+	    log info "${_kmod}.ko is found at path: ${_kmod_path}"
+
+	    if [ "${_kmod_path}" != "${_kmod_file}" ] \
+		   && ! (${KLDUNLOAD} "${_kmod}" | capture_output debug kldunload); then
+		log error "${_kmod}.ko is loaded from a different location, but cannot be replaced"
+		exit 127
+	    fi
 	fi
     fi
 
     log debug "Assert loaded: kmod=${_kmod}, kmod_file=${_kmod_file}"
 
-    if ! ${KLDSTAT} -q -m "${_kmod}"; then
+    if ! (${KLDSTAT} -q -m "${_kmod}" | capture_output debug kldstat); then
 	log debug "Kernel module ${_kmod} is not loaded"
 
 	if ! (${KLDLOAD} "${_kmod_file}" 2>&1 | capture_output debug kldload); then
