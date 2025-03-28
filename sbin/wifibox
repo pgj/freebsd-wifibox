@@ -152,7 +152,7 @@ sysctl_value() {
 get_kmod_path() {
     local _kmod="$1"
 
-    ${KLDSTAT} -v -n "${_kmod}" \
+    ${KLDSTAT} -v -n "${_kmod}" 2> /dev/null \
 	| ${TAIL} +2 \
 	| ${HEAD} -1 \
 	| ${SED} -e 's![^(]*(\([^)]*\))!\1!'
