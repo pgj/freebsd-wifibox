@@ -1,4 +1,4 @@
-.Dd January 8, 2025
+.Dd July 26, 2025
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -78,8 +78,9 @@ used.
 Make sure that the networking configuration does not conflict with
 that of the host in any case.
 .Pp
-By default, PCI pass-through is disabled for AMD-based hardware, hence
-it must be explicitly enabled via the corresponding
+By default, PCI pass-through is disabled for CPUs manufactured by AMD
+(dubbed AMD-Vi), hence it must be explicitly enabled via the
+corresponding
 .Xr sysctl 8
 variable.
 This can be done by adding the following line to either
