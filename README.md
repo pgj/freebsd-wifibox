@@ -16,14 +16,14 @@ Wifibox tries to implement as a single easy-to-use software package.
   `wpa_supplicant.conf(5)` and `hostapd.conf(5)` files without any
   changes.
 
-- When configured by the guest, `wpa_supplicant(8)` or `hostapd(8)`
-  control sockets could be exposed, which enables use of related
-  utilities directly from the host, such as `wpa_cli(8)` or
-  `wpa_gui(8)` from the [`net/wpa_supplicant_gui`] FreeBSD package, or
-  `hostapd_cli(8)`.
-
+- `wpa_supplicant(8)`/`hostapd(8)` control sockets are exposed by
+  default at `/var/run/wpa_supplicant/<interface>`, which enables
+  use of related utilities directly from the host, such as `wpa_cli(8)`
+  or `wpa_gui(8)` from the [`net/wpa_supplicant_gui`] FreeBSD package,
+  or `hostapd_cli(8)`.
+  
 - Everything is shipped in a single FreeBSD package that can be easily
-  installed and removed.  It comes with an `rc(8)` system service that
+   installed and removed.  It comes with an `rc(8)` system service that
   automatically launches the guest on boot and stops it on shutdown.
 
 - A workaround is supplied for laptops to support suspend/resume.
@@ -47,6 +47,7 @@ via Network Address Translation (NAT) or bridging, for example.  Be
 sure to consult the documentation of the guest itself before use.*
 
 ## Prerequisites
+'
 
 Before the installation, please check if those items are present on
 the target computer otherwise running the software might not be
