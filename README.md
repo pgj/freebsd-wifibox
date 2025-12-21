@@ -170,6 +170,7 @@ configurations:
 | Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo ThinkPad X270 | 13.5-RELEASE, 14.3-RELEASE, 15.0-ALPHA3 (snapshot `20250921-26988773d1da-280233`) |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 | Intel Core i5-8250U | Realtek RTL8822BE | Lenovo YOGA 730 | 13.2-RELEASE |
+| Intel Core i5-8265U | Intel Dual Band Wireless AC 9560 | Lenovo ThinkPad T490 | 14.3-RELEASE |
 | Intel Core i7-4600M | Intel Centrino Advanced-N 6235 | Dell Latitude E6440 | 13.0-RELEASE |
 | Intel Core i7-4870HQ | Broadcom BCM43602 | Apple MacBook Pro 11.4 | 13.3-RELEASE |
 | Intel Core i7-6600U | Intel(R) Dual Band Wireless AC 8260 | Lenovo ThinkPad T470 | 14.1-RELEASE |
