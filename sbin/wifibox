@@ -22,6 +22,7 @@ KERNEL_PATH=$(${SYSCTL} -n kern.module_path | ${SED} -E 's/^([^;]*);.*/\1/')
 : "${BHYVECTL:=/usr/sbin/bhyvectl}"
 : "${VMM_KO:=${KERNEL_PATH}/vmm.ko}"
 : "${NMDM_KO:=${KERNEL_PATH}/nmdm.ko}"
+: "${IF_BRIDGE_KO:=${KERNEL_PATH}/if_bridge.ko}"
 : "${DEVCTL:=/usr/sbin/devctl}"
 : "${DAEMON:=/usr/sbin/daemon}"
 : "${IFCONFIG:=/sbin/ifconfig}"
@@ -210,6 +211,10 @@ assert_nmdm_loaded() {
     assert_kmod_loaded "nmdm" "${NMDM_KO}"
 }
 
+assert_if_bridge_loaded() {
+    assert_kmod_loaded "if_bridge" "${IF_BRIDGE_KO}"
+}
+
 # shellcheck disable=SC2046
 check_iommu() {
     local _iommu
@@ -296,6 +301,7 @@ load_bhyve_conf_values() {
 }
 
 has_bridge_interface() {
+    log debug "Check if the bridge interface (${WIFIBOX_IF}) is already present"
     ${IFCONFIG} "${WIFIBOX_IF}" 2>&1 | capture_output debug ifconfig
 }
 
@@ -311,6 +317,8 @@ get_tap_interface() {
 
 create_bridge() {
     local _tap
+
+    assert_if_bridge_loaded
 
     if ! has_bridge_interface; then
 	log info "Creating bridge interface: ${WIFIBOX_IF}"
