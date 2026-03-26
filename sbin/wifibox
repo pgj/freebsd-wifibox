@@ -296,7 +296,7 @@ load_bhyve_conf_values() {
 }
 
 has_bridge_interface() {
-    ${IFCONFIG} | ${GREP} -Fq "${WIFIBOX_IF}: "
+    ${IFCONFIG} "${WIFIBOX_IF}" 2>&1 | capture_output debug ifconfig
 }
 
 get_tap_interface() {
