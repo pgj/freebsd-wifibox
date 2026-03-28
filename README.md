@@ -62,8 +62,9 @@ possible:
   (MSI) because that is required for the PCI pass-through to work.
   USB wireless adapters are not supported.
 
-- A supported FreeBSD/amd64 system: 13.5-RELEASE or 14.3-RELEASE.
-  Later versions will also probably work, but your mileage may vary.
+- A supported FreeBSD/amd64 system: 13.5-RELEASE, 14.4-RELEASE, or
+  15.0-RELEASE.  Later versions will also probably work, but your
+  mileage may vary.
 
 - [`grub2-bhyve`] or the corresponding `sysutils/grub2-bhyve` FreeBSD
   package, so the Linux guest could be booted via GRUB 2.
@@ -167,7 +168,7 @@ configurations:
 | AMD Ryzen 9 9950X | Intel Wi-Fi 6E AX210 | Minisforum MS-A1-N0CPUR | 14.2-RELEASE |
 | Intel Core i5-3210M | Broadcom BCM4331 | Apple MacBook Pro A1278 | 13.2-RELEASE |
 | Intel Core i5-5300U | Intel Wireless 7265 | Lenovo ThinkPad T450 | 13.1-RELEASE |
-| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo ThinkPad X270 | 13.5-RELEASE, 14.3-RELEASE, 15.0-ALPHA3 (snapshot `20250921-26988773d1da-280233`) |
+| Intel Core i5-6300U | Intel Dual Band Wireless AC 8260 | Lenovo ThinkPad X270 | 13.5-RELEASE, 14.4-RELEASE, 15.0-RELEASE, 16.0-CURRENT (snapshot `20260324-4f8a1b4dffa8-284626`) |
 | Intel Core i5-10210U | Intel Dual Band Wireless AC 9500 | System 76 Lemur Pro 'LEMP9' | 13.0-RELEASE |
 | Intel Core i5-8250U | Realtek RTL8822BE | Lenovo YOGA 730 | 13.2-RELEASE |
 | Intel Core i5-8265U | Intel Dual Band Wireless AC 9560 | Lenovo ThinkPad T490 | 14.3-RELEASE |
