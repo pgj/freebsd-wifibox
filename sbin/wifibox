@@ -697,7 +697,8 @@ vm_manager() {
 
     _bhyve_args=""
     _bhyve_args="${_bhyve_args} -c ${cpus}"
-    _bhyve_args="${_bhyve_args} -m ${memory} -AHP -u -S"
+    _bhyve_args="${_bhyve_args} -m ${memory}"
+    _bhyve_args="${_bhyve_args} -AHPSuw"
     _bhyve_args="${_bhyve_args} ${_nmdm_bhyve}"
     _bhyve_args="${_bhyve_args} -s 0,hostbridge"
     _bhyve_args="${_bhyve_args} -s 31,lpc"
