@@ -729,6 +729,7 @@ vm_manager() {
 	   _restart=yes;;
 	1) log info "VM manager: guest was powered off, signaling exit";;
 	2) log info "VM manager: guest was halted, signaling exit";;
+	143) log info "VM manager: guest was terminated but did not power off, signaling exit";;
 	*) log info "VM manager: guest crashed, signaling restart after 5 seconds"
 	   log debug "exit_code=${_bhyve_exit_code}"
 	   ${SLEEP} 5 2>&1 | capture_output debug sleep
