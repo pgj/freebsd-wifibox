@@ -1,4 +1,4 @@
-.Dd July 26, 2025
+.Dd April 5, 2026
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -46,7 +46,7 @@ Once the guest has been started up successfully,
 .Nm
 exposes the
 .Sy wifibox0
-.Xr bridge 4
+.Xr tap 4
 networking interface, which needs to be configured further with the
 help of
 .Xr rc.conf 5 ,
@@ -370,8 +370,8 @@ In that case, please study the
 manual page before proceeding.
 .Sh SEE ALSO
 .Xr cu 1 ,
-.Xr bridge 4 ,
 .Xr nmdm 4 ,
+.Xr tap 4 ,
 .Xr vmm 4 ,
 .Xr devd.conf 5 ,
 .Xr loader.conf 5 ,

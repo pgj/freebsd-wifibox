@@ -23,7 +23,7 @@ KERNEL_PATH=$(${SYSCTL} -n kern.module_path | ${SED} -E 's/^([^;]*);.*/\1/')
 : "${BHYVECTL:=/usr/sbin/bhyvectl}"
 : "${VMM_KO:=${KERNEL_PATH}/vmm.ko}"
 : "${NMDM_KO:=${KERNEL_PATH}/nmdm.ko}"
-: "${IF_BRIDGE_KO:=${KERNEL_PATH}/if_bridge.ko}"
+: "${IF_TUNTAP_KO:=${KERNEL_PATH}/if_tuntap.ko}"
 : "${DEVCTL:=/usr/sbin/devctl}"
 : "${DAEMON:=/usr/sbin/daemon}"
 : "${IFCONFIG:=/sbin/ifconfig}"
@@ -212,8 +212,8 @@ assert_nmdm_loaded() {
     assert_kmod_loaded "nmdm" "${NMDM_KO}"
 }
 
-assert_if_bridge_loaded() {
-    assert_kmod_loaded "if_bridge" "${IF_BRIDGE_KO}"
+assert_if_tuntap_loaded() {
+    assert_kmod_loaded "if_tuntap" "${IF_TUNTAP_KO}"
 }
 
 # shellcheck disable=SC2046
@@ -301,62 +301,29 @@ load_bhyve_conf_values() {
 	"${stop_wait_max}"
 }
 
-has_bridge_interface() {
-    log debug "Check if the bridge interface (${WIFIBOX_IF}) is already present"
+has_tap_interface() {
+    log debug "Check if the tap interface (${WIFIBOX_IF}) is already present"
     ${IFCONFIG} "${WIFIBOX_IF}" 2>&1 | capture_output debug ifconfig
 }
 
 get_tap_interface() {
-    if has_bridge_interface; then
-	${IFCONFIG} "${WIFIBOX_IF}" \
-	    | ${GREP} -F member \
-	    | ${SED} -E 's/^.*member:.*(tap[^ ]*).*$/\1/'
+    ${READLINK} /dev/"${WIFIBOX_IF}"
+}
+
+create_tap() {
+    assert_if_tuntap_loaded
+
+    if ! has_tap_interface; then
+	log info "Creating tap interface: ${WIFIBOX_IF}"
+	${IFCONFIG} tap create name ${WIFIBOX_IF} up 2>&1 | capture_output debug ifconfig
     else
-	${ECHO} ""
+	log warn "Tap interface already exists: ${WIFIBOX_IF}, skipping creation"
     fi
 }
 
-create_bridge() {
-    local _tap
-
-    assert_if_bridge_loaded
-
-    if ! has_bridge_interface; then
-	log info "Creating bridge interface: ${WIFIBOX_IF}"
-	${IFCONFIG} bridge create name ${WIFIBOX_IF} up 2>&1 | capture_output debug ifconfig
-    else
-	log warn "Bridge interface already exists: ${WIFIBOX_IF}, skipping creation"
-    fi
-
-    _tap="$(get_tap_interface)"
-
-    if [ -z "${_tap}" ]; then
-	_tap="$(${IFCONFIG} tap create up)"
-	log info "Linking tap interface to ${WIFIBOX_IF}: ${_tap}"
-	${IFCONFIG} ${WIFIBOX_IF} addm "${_tap}" 2>&1 | capture_output debug ifconfig
-    else
-	log warn "Linked tap interface already exists: ${_tap}, skipping creation"
-    fi
-}
-
-destroy_bridge() {
-    local _tap
-
-    _tap="$(get_tap_interface)"
-
-    if [ -n "${_tap}" ]; then
-	log info "Unlinking tap interface from ${WIFIBOX_IF}: ${_tap}"
-	${IFCONFIG} ${WIFIBOX_IF} deletem "${_tap}" 2>&1 | capture_output debug ifconfig
-
-	log info "Destroying linked tap interface: ${_tap}"
-	${IFCONFIG} "${_tap}" destroy 2>&1 | capture_output debug ifconfig
-    else
-	log warn "No linked tap inteface found for ${WIFIBOX_IF}"
-    fi
-
-    log info "Destroying bridge interface: ${WIFIBOX_IF}"
+destroy_tap() {
+    log info "Destroying tap interface: ${WIFIBOX_IF}"
     ${IFCONFIG} ${WIFIBOX_IF} destroy 2>&1 | capture_output debug ifconfig
-
 }
 
 find_guest_ip() {
@@ -645,11 +612,11 @@ vm_manager() {
 	log warn "No PPT driver is attached due to lack of device"
     fi
 
-    _tap="$(get_tap_interface)"
-    if [ -n "${_tap}" ]; then
+    if has_tap_interface; then
+	_tap="$(get_tap_interface)"
 	_tap_bhyve="-s 5:0,e1000,${_tap}"
-	${IFCONFIG} "${_tap}" up 2>&1 | capture_output debug ifconfig
-	log info "tap interface is configured: ${_tap}"
+	${IFCONFIG} "${WIFIBOX_IF}" up 2>&1 | capture_output debug ifconfig
+	log info "Tap interface is configured (${WIFIBOX_IF} -> ${_tap}"
     else
 	log error "No tap interface is available, cannot proceed"
 	quit_daemonization
@@ -831,7 +798,7 @@ wifibox_start() {
     fi
 
     if has_flag "${_start}" "N"; then
-	create_bridge
+	create_tap
 	show_progress
     fi
 
@@ -880,7 +847,7 @@ wifibox_stop() {
     fi
 
     if has_flag "${_stop}" "N"; then
-	destroy_bridge
+	destroy_tap
 	show_progress
     fi
 
@@ -952,7 +919,7 @@ wifibox_restart() {
     fi
 
     if has_flag "${_restart}" "N"; then
-	destroy_bridge
+	destroy_tap
 	show_progress
     fi
 
@@ -962,7 +929,7 @@ wifibox_restart() {
     fi
 
     if has_flag "${_restart}" "N"; then
-	create_bridge
+	create_tap
 	show_progress
     fi
 
