@@ -6,7 +6,8 @@ PREFIX=%%PREFIX%%
 LOCALBASE=%%LOCALBASE%%
 VERSION=%%VERSION%%
 GUEST_ROOT=%%GUEST_ROOT%%
-SCRIPT=${PREFIX}/sbin/wifibox
+SCRIPT="${PREFIX}"/sbin/wifibox
+BOOTROOM="${LOCALBASE}"/share/uefi-firmware/BHYVE_UEFI.fd
 LOGDIR=/var/log
 RUNDIR=/var/run/wifibox
 CONFDIR=${PREFIX}/etc/wifibox
@@ -51,10 +52,10 @@ KERNEL_PATH=$(${SYSCTL} -n kern.module_path | ${SED} -E 's/^([^;]*);.*/\1/')
 : "${LS:=/bin/ls}"
 : "${SEQ:=/usr/bin/seq}"
 
-: "${GRUB_BHYVE:=${LOCALBASE}/sbin/grub-bhyve}"
 : "${SOCAT:=${LOCALBASE}/bin/socat}"
 
-DISK_IMAGE="${GUEST_ROOT}/disk.img"
+ESP_IMAGE="${GUEST_ROOT}/esp.img"
+ROOT_IMAGE="${GUEST_ROOT}/root.img"
 
 NMDM_DEVICE=/dev/nmdm-wifibox
 NMDM_A="${NMDM_DEVICE}.1A"
@@ -588,7 +589,6 @@ assert_value_yesno() {
 # shellcheck disable=SC2086
 vm_manager() {
     local _max_vmm_cpus
-    local _nmdm_grub_bhyve
     local _nmdm_bhyve
     local _passthru_bhyve
     local _tap_bhyve
@@ -598,10 +598,6 @@ vm_manager() {
     local _app_conf_ptr="${CONFDIR}/app_config"
     local _app_conf_mode
     local _app_conf_bhyve
-    local _grub_bhyve_args
-    local _grub_bhyve_exit_code
-    local _grub_device_map="${GUEST_ROOT}/device.map"
-    local _grub_cfg="${GUEST_ROOT}/grub.cfg"
     local _nice_priority
     local _bhyve_args
     local _bhyve_devs
@@ -619,7 +615,6 @@ vm_manager() {
 
     if [ "${console}" = "yes" ]; then
 	assert_nmdm_loaded
-	_nmdm_grub_bhyve="-c ${NMDM_A}"
 	_nmdm_bhyve="-l com1,${NMDM_A}"
 	log info "Guest console is configured to use"
     else
@@ -661,21 +656,22 @@ vm_manager() {
 	exit 5
     fi
 
-    log info "Launching guest ${WIFIBOX_VM} from ${GUEST_ROOT} with grub-bhyve"
+    log info "Launching guest ${WIFIBOX_VM} from ${GUEST_ROOT} via UEFI"
 
-    if [ ! -f "${_grub_cfg}" ]; then
-	log error "${_grub_cfg} could not be found, guest cannot be started"
+    if [ ! -f "${ESP_IMAGE}" ]; then
+	log error "${ESP_IMAGE} could not be found, guest cannot be started"
 	quit_daemonization
 	exit 4
     fi
 
-    if [ ! -f "${DISK_IMAGE}" ]; then
-	log error "${DISK_IMAGE} could not be found, guest cannot be started"
+    if [ ! -f "${ROOT_IMAGE}" ]; then
+	log error "${ROOT_IMAGE} could not be found, guest cannot be started"
 	quit_daemonization
 	exit 4
     fi
 
-    _bhyve_devs="virtio-blk,${DISK_IMAGE}"
+    _bhyve_devs="${_bhyve_devs} virtio-blk,${ESP_IMAGE}"
+    _bhyve_devs="${_bhyve_devs} virtio-blk,${ROOT_IMAGE}"
     _bhyve_devs="${_bhyve_devs} virtio-9p,config=${CONFDIR}/appliance,ro"
     _bhyve_devs="${_bhyve_devs} virtio-9p,var=${RUNDIR}/appliance"
     _app_conf=$(${READLINK} -f "%Y" ${_app_conf_ptr})
@@ -697,28 +693,6 @@ vm_manager() {
     fi
 
     log debug "Devices: ${_bhyve_devs}"
-
-    _grub_bhyve_args=""
-    _grub_bhyve_args="${_grub_bhyve_args} -S -M ${memory}"
-    _grub_bhyve_args="${_grub_bhyve_args} -r host ${_nmdm_grub_bhyve}"
-    [ -f "${_grub_device_map}" ] \
-	&& _grub_bhyve_args="${_grub_bhyve_args} -m ${_grub_device_map}"
-    _grub_bhyve_args="${_grub_bhyve_args} -d ${GUEST_ROOT} ${WIFIBOX_VM}"
-
-    log debug "Arguments: ${_grub_bhyve_args}"
-    ${GRUB_BHYVE} ${_grub_bhyve_args} 2>&1 | capture_output debug grub-bhyve
-    _grub_bhyve_exit_code="$?"
-
-    if [ "${_grub_bhyve_exit_code}" -ne "0" ]; then
-	destroy_vm
-
-	log debug "exit_code=${_grub_bhyve_exit_code}"
-	log info "grub-bhyve failed to start, signaling restart after 5 seconds"
-
-	${SLEEP} 5 2>&1 | capture_output debug sleep
-	exit 1
-    fi
-
     log info "Launching guest ${WIFIBOX_VM} from ${GUEST_ROOT} with bhyve"
 
     _bhyve_args=""
@@ -727,6 +701,7 @@ vm_manager() {
     _bhyve_args="${_bhyve_args} ${_nmdm_bhyve}"
     _bhyve_args="${_bhyve_args} -s 0,hostbridge"
     _bhyve_args="${_bhyve_args} -s 31,lpc"
+    _bhyve_args="${_bhyve_args} -l bootrom,${BOOTROOM}"
     _slot=0
 
     for dev in ${_bhyve_devs}; do

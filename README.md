@@ -66,8 +66,9 @@ possible:
   15.0-RELEASE.  Later versions will also probably work, but your
   mileage may vary.
 
-- [`grub2-bhyve`] or the corresponding `sysutils/grub2-bhyve` FreeBSD
-  package, so the Linux guest could be booted via GRUB 2.
+- [`bhyve` UEFI firmware] or the corresponding
+  `sysutils/bhyve-firmware` FreeBSD package, so the Linux guest could
+  be booted via EFI.
 
 - [`socat`] or the respective `net/socat` FreeBSD package, through
   which control sockets for `wpa_supplicant(8)` and `hostapd(8)` could
@@ -92,8 +93,8 @@ mostly recommended for development and testing.
 ```console
 # make install \
     PREFIX=<prefix> \
-    LOCALBASE=<prefix of the grub2-bhyve and socat packages> \
-    GUEST_ROOT=<guest disk image location> \
+    LOCALBASE=<prefix of the bhyve-firmware and socat packages> \
+    GUEST_ROOT=<guest disk images location> \
     GUEST_MAN=<guest manual page location> \
     RECOVERY_METHOD=<method to use on suspend and resume> \
     DEVD_FIX=<add extra devd.conf(5) configuration to handle suspend>
@@ -101,8 +102,8 @@ mostly recommended for development and testing.
 
 By default, `PREFIX` is set to `/usr/local`.  In addition to that, it
 is possible to set the `LOCALBASE` variable to tell if the prefix
-under which the `grub-bhyve` and `socat` utilities were installed is
-different.
+under which the `bhyve-firmware` data files and the `socat` utility
+were installed is different.
 
 The `GUEST_ROOT` variable should point to the directory that houses
 the files related to the guest.  Note that these are not part of the
@@ -110,12 +111,14 @@ repository and should be installed individually.  For example, such
 files could be installed from the [`freebsd-wifibox-alpine`]
 repository.
 
-- GRUB is going to be configured according to the contents of
-  `grub.cfg`, and then the system is booted from the virtual disk
-  image whose contents should be stored as `disk.img`.
+- `esp.img` should hold the EFI System Partition (ESP), which is a
+  FAT12 file system where either the Linux kernel itself (wrapped in
+  the [EFI stub]) or some other boot loader (e.g. GRUB, Syslinux) is
+  stored, alongside the kernel, its configuration and data files.
 
-- When needed, `device.map` could also be placed there to teach GRUB
-  about the virtual disk image.
+- `root.img` is the contents of the root file system, which is made
+  available for booting as the secondary disk drive, e.g. under
+  `/dev/vdb`, once the kernel has been loaded.
 
 The `RECOVERY_METHOD` variable can be used to tell in which way
 Wifibox should be revived on a suspend/resume pair of events.
@@ -192,6 +195,7 @@ configuration added here!
 [`freebsd-wifibox-port`]: https://github.com/pgj/freebsd-wifibox-port
 [`freebsd-wifibox-alpine`]: https://github.com/pgj/freebsd-wifibox-alpine
 [`net/wpa_supplicant_gui`]: https://cgit.freebsd.org/ports/tree/net/wpa_supplicant_gui
-[`grub2-bhyve`]: https://github.com/grehan-freebsd/grub2-bhyve
+[`bhyve` UEFI firmware]: https://wiki.freebsd.org/bhyve/UEFI
 [`socat`]: http://www.dest-unreach.org/socat/
+[EFI stub]: https://docs.kernel.org/admin-guide/efi-stub.html
 [article]: https://github.com/pgj/freebsd-wifibox/releases/download/freebsd-journal-2024-06/freebsd-journal-wifibox.pdf
