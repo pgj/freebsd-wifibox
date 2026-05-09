@@ -1,4 +1,4 @@
-.Dd April 5, 2026
+.Dd May 9, 2026
 .Dt WIFIBOX 8
 .Os
 .Sh NAME
@@ -212,17 +212,11 @@ otherwise the link will stop working.
 # service netif start
 .Ed
 .Pp
-In addition to that, because a
-.Xr devd.conf 5
-file might be installed as part of the application,
+In addition to that, because
 .Xr devd 8
-may have to be restarted so the additional configuration file can be
-read.
-These bits are responsible to managing the recovery in case of
-suspend/resume events.
-When this feature is not in use, or not required, for example, for
-.Fx 14.0
-or later, this step may be safely omitted.
+will be configured for the application to respond appropriately to
+suspend and resume events, it must be restarted as well so that the
+changes could be picked up without rebooting.
 .Bd -literal -offset indent
 # service devd restart
 .Ed
@@ -373,7 +367,6 @@ manual page before proceeding.
 .Xr nmdm 4 ,
 .Xr tap 4 ,
 .Xr vmm 4 ,
-.Xr devd.conf 5 ,
 .Xr loader.conf 5 ,
 .Xr rc.conf 5 ,
 .Xr sysctl.conf 5 ,

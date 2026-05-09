@@ -62,9 +62,8 @@ possible:
   (MSI) because that is required for the PCI pass-through to work.
   USB wireless adapters are not supported.
 
-- A supported FreeBSD/amd64 system: 13.5-RELEASE, 14.4-RELEASE, or
-  15.0-RELEASE.  Later versions will also probably work, but your
-  mileage may vary.
+- A [supported FreeBSD/amd64 system]: 14.4-RELEASE or 15.0-RELEASE.
+  Later versions will also probably work, but your mileage may vary.
 
 - [`bhyve` UEFI firmware] or the corresponding
   `sysutils/bhyve-firmware` FreeBSD package, so the Linux guest could
@@ -96,8 +95,7 @@ mostly recommended for development and testing.
     LOCALBASE=<prefix of the bhyve-firmware and socat packages> \
     GUEST_ROOT=<guest disk images location> \
     GUEST_MAN=<guest manual page location> \
-    RECOVERY_METHOD=<method to use on suspend and resume> \
-    DEVD_FIX=<add extra devd.conf(5) configuration to handle suspend>
+    RECOVERY_METHOD=<method to use on suspend and resume>
 ```
 
 By default, `PREFIX` is set to `/usr/local`.  In addition to that, it
@@ -133,15 +131,6 @@ Wifibox should be revived on a suspend/resume pair of events.
   reverse on resume.
 - The recovery mechanism itself could be disabled by setting this
   value to be empty.
-
-The `DEVD_FIX` variable controls the deployment of a fix for handling
-the ACPI suspend event.  In older FreeBSD versions, suspend will not
-automatically trigger a call for the `service wifibox suspend` command
-so that has to be explicitly configured.  This has been added for
-FreeBSD 14.0 hence it is not required any more from that version
-onwards.  Set it to an empty value to disable this fix, otherwise the
-default value is going to be determined based on the OS version where
-the build is run.
 
 ## Documentation
 
@@ -195,6 +184,7 @@ configuration added here!
 [`freebsd-wifibox-port`]: https://github.com/pgj/freebsd-wifibox-port
 [`freebsd-wifibox-alpine`]: https://github.com/pgj/freebsd-wifibox-alpine
 [`net/wpa_supplicant_gui`]: https://cgit.freebsd.org/ports/tree/net/wpa_supplicant_gui
+[supported FreeBSD/amd64 system]: https://www.freebsd.org/releases/
 [`bhyve` UEFI firmware]: https://wiki.freebsd.org/bhyve/UEFI
 [`socat`]: http://www.dest-unreach.org/socat/
 [EFI stub]: https://docs.kernel.org/admin-guide/efi-stub.html

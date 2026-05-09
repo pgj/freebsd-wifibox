@@ -38,12 +38,6 @@ _GUEST_MAN=	../man8/wifibox.8.gz
 .if !defined(DEVD_FIX)
 _FREEBSD_VERSION!=	$(UNAME) -U
 
-.if $(_FREEBSD_VERSION) > 1400089
-DEVD_FIX=	#
-.else
-DEVD_FIX=	please
-.endif
-
 .endif
 
 SUB_LIST=	PREFIX=$(PREFIX) \
@@ -76,12 +70,6 @@ install:
 
 	$(MKDIR) -p $(ETCDIR)/wifibox
 	$(CP) -R etc/* $(ETCDIR)/wifibox/
-
-.if defined(DEVD_FIX)
-	$(MKDIR) -p $(ETCDIR)/devd
-	$(SED) ${_SUB_LIST_EXP} devd/wifibox.conf.sample \
-		> $(ETCDIR)/devd/wifibox.conf.sample
-.endif
 
 	$(MKDIR) -p $(RCDIR)
 	$(SED) ${_SUB_LIST_EXP} rc.d/wifibox > $(RCDIR)/wifibox
